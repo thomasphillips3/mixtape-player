@@ -1,0 +1,43 @@
+{
+  "client": {
+    "artist_name": "Artist Name",
+    "project_name": "Album/EP Title",
+    "mixing_engineer": "Your Mixing Studio Name",
+    "contact_email": "your.email@studio.com",
+    "website": "https://yourstudio.com",
+    "project_date": "2024-01-01",
+    "app_name": "Artist Music Player",
+    "package_name_suffix": "artistname.music"
+  },
+  "branding": {
+    "primary_color": "#1DB954",
+    "secondary_color": "#191414",
+    "accent_color": "#FFFFFF",
+    "app_icon": "assets/branding/app_icon.png",
+    "splash_logo": "assets/branding/splash_logo.png",
+    "background_image": "assets/branding/background.jpg"
+  },
+  "audio": {
+    "format": "FLAC",
+    "sample_rate": "96kHz",
+    "bit_depth": "24-bit",
+    "source_directory": "assets/audio/",
+    "enable_lossless_info": true,
+    "show_technical_specs": true
+  },
+  "features": {
+    "android_auto": true,
+    "carplay": true,
+    "background_playback": true,
+    "gapless_playback": true,
+    "crossfade": false,
+    "equalizer": false
+  },
+  "delivery": {
+    "include_source_files": false,
+    "generate_apk": true,
+    "generate_aab": false,
+    "ios_archive": true,
+    "include_installation_guide": true
+  }
+}

@@ -34,6 +34,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.ui.PlayerNotificationManager
 import com.example.android.uamp.media.library.JsonSource
+import com.example.android.uamp.media.library.LocalBundledSource
 import com.example.android.uamp.media.library.MusicSource
 import com.google.android.gms.cast.framework.CastContext
 import com.google.common.util.concurrent.ListenableFuture
@@ -160,9 +161,9 @@ open class MusicService : MediaSessionService() {
             PlayerNotificationListener()
         )
 
-        // The media library is built from a remote JSON file. We'll create the source here,
-        // and then use a suspend function to perform the download off the main thread.
-        mediaSource = JsonSource(source = remoteJsonSource)
+        // The media library is built from bundled audio files for professional delivery.
+        // This enables mixing engineers to deliver high-quality apps with client's music.
+        mediaSource = LocalBundledSource(context = this)
         serviceScope.launch {
             Log.d(TAG, "Starting to load catalog from: $remoteJsonSource")
             mediaSource.load()

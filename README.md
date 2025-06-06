@@ -1,6 +1,6 @@
-# Mixtape Player
+# Mixtape Player - Professional Audio Delivery Template
 
-A modern Android music player with comprehensive Android Auto integration, built on the foundation of Google's Universal Android Music Player (UAMP) sample with significant enhancements for real-world use.
+A white-label music player template designed for **mixing engineers** to deliver professional, branded apps to their artist clients. Each app contains high-quality bundled audio files with lossless playback and in-vehicle integration.
 
 ## ✨ Features
 

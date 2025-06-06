@@ -1,0 +1,14 @@
+{
+  "project": {
+    "artistName": "Demo Artist",
+    "projectName": "Professional Mix Demo"
+  },
+  "tracks": [
+    {
+      "id": "track_01",
+      "title": "Track One",
+      "artist": "Demo Artist",
+      "album": "Professional Mix Demo"
+    }
+  ]
+}
