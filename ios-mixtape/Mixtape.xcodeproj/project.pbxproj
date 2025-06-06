@@ -7,35 +7,33 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1234567890ABCDEF123 /* MixtapeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF124 /* MixtapeApp.swift */; };
-		A1234567890ABCDEF125 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF126 /* ContentView.swift */; };
-		A1234567890ABCDEF127 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF128 /* Assets.xcassets */; };
-		A1234567890ABCDEF129 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF130 /* Preview Assets.xcassets */; };
-		A1234567890ABCDEF131 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF132 /* AudioManager.swift */; };
-		A1234567890ABCDEF133 /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF134 /* MusicCatalog.swift */; };
-		A1234567890ABCDEF135 /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF136 /* NowPlayingView.swift */; };
-		A1234567890ABCDEF137 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF138 /* MiniPlayerView.swift */; };
-		A1234567890ABCDEF139 /* MusicLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF140 /* MusicLibraryView.swift */; };
-		A1234567890ABCDEF141 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF142 /* CarPlaySceneDelegate.swift */; };
+		1A2B3C4D5E6F7890A1B2 /* MixtapeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1B1 /* MixtapeApp.swift */; };
+		1A2B3C4D5E6F7890A1B4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1B3 /* ContentView.swift */; };
+		1A2B3C4D5E6F7890A1B6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1B5 /* Assets.xcassets */; };
+		1A2B3C4D5E6F7890A1B8 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1B7 /* AudioManager.swift */; };
+		1A2B3C4D5E6F7890A1BA /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1B9 /* MusicCatalog.swift */; };
+		1A2B3C4D5E6F7890A1BC /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1BB /* NowPlayingView.swift */; };
+		1A2B3C4D5E6F7890A1BE /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1BD /* MiniPlayerView.swift */; };
+		1A2B3C4D5E6F7890A1C0 /* MusicLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1BF /* MusicLibraryView.swift */; };
+		1A2B3C4D5E6F7890A1C2 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890A1C1 /* CarPlaySceneDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A1234567890ABCDEF121 /* Mixtape.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mixtape.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1234567890ABCDEF124 /* MixtapeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixtapeApp.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF126 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF128 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A1234567890ABCDEF130 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		A1234567890ABCDEF132 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF134 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF136 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF138 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF140 /* MusicLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibraryView.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF142 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
-		A1234567890ABCDEF143 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1A0 /* Mixtape.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mixtape.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A2B3C4D5E6F7890A1B1 /* MixtapeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixtapeApp.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1B3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1B7 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1B9 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1BB /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1BD /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1BF /* MusicLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibraryView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1C1 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890A1C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A1234567890ABCDEF118 /* Frameworks */ = {
+		1A2B3C4D5E6F7890A19D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -45,82 +43,73 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A1234567890ABCDEF112 = {
+		1A2B3C4D5E6F7890A197 = {
 			isa = PBXGroup;
 			children = (
-				A1234567890ABCDEF123 /* Mixtape */,
-				A1234567890ABCDEF122 /* Products */,
+				1A2B3C4D5E6F7890A1A2 /* Mixtape */,
+				1A2B3C4D5E6F7890A1A1 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A1234567890ABCDEF122 /* Products */ = {
+		1A2B3C4D5E6F7890A1A1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A1234567890ABCDEF121 /* Mixtape.app */,
+				1A2B3C4D5E6F7890A1A0 /* Mixtape.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A1234567890ABCDEF123 /* Mixtape */ = {
+		1A2B3C4D5E6F7890A1A2 /* Mixtape */ = {
 			isa = PBXGroup;
 			children = (
-				A1234567890ABCDEF124 /* MixtapeApp.swift */,
-				A1234567890ABCDEF126 /* ContentView.swift */,
-				A1234567890ABCDEF144 /* Views */,
-				A1234567890ABCDEF145 /* Models */,
-				A1234567890ABCDEF146 /* Services */,
-				A1234567890ABCDEF128 /* Assets.xcassets */,
-				A1234567890ABCDEF143 /* Info.plist */,
-				A1234567890ABCDEF147 /* Preview Content */,
+				1A2B3C4D5E6F7890A1B1 /* MixtapeApp.swift */,
+				1A2B3C4D5E6F7890A1B3 /* ContentView.swift */,
+				1A2B3C4D5E6F7890A1C4 /* Views */,
+				1A2B3C4D5E6F7890A1C5 /* Models */,
+				1A2B3C4D5E6F7890A1C6 /* Services */,
+				1A2B3C4D5E6F7890A1B5 /* Assets.xcassets */,
+				1A2B3C4D5E6F7890A1C3 /* Info.plist */,
 			);
 			path = Mixtape;
 			sourceTree = "<group>";
 		};
-		A1234567890ABCDEF144 /* Views */ = {
+		1A2B3C4D5E6F7890A1C4 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				A1234567890ABCDEF136 /* NowPlayingView.swift */,
-				A1234567890ABCDEF138 /* MiniPlayerView.swift */,
-				A1234567890ABCDEF140 /* MusicLibraryView.swift */,
+				1A2B3C4D5E6F7890A1BB /* NowPlayingView.swift */,
+				1A2B3C4D5E6F7890A1BD /* MiniPlayerView.swift */,
+				1A2B3C4D5E6F7890A1BF /* MusicLibraryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		A1234567890ABCDEF145 /* Models */ = {
+		1A2B3C4D5E6F7890A1C5 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				A1234567890ABCDEF134 /* MusicCatalog.swift */,
+				1A2B3C4D5E6F7890A1B9 /* MusicCatalog.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		A1234567890ABCDEF146 /* Services */ = {
+		1A2B3C4D5E6F7890A1C6 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				A1234567890ABCDEF132 /* AudioManager.swift */,
-				A1234567890ABCDEF142 /* CarPlaySceneDelegate.swift */,
+				1A2B3C4D5E6F7890A1B7 /* AudioManager.swift */,
+				1A2B3C4D5E6F7890A1C1 /* CarPlaySceneDelegate.swift */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		A1234567890ABCDEF147 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				A1234567890ABCDEF130 /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A1234567890ABCDEF120 /* Mixtape */ = {
+		1A2B3C4D5E6F7890A19F /* Mixtape */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1234567890ABCDEF148 /* Build configuration list for PBXNativeTarget "Mixtape" */;
+			buildConfigurationList = 1A2B3C4D5E6F7890A1C7 /* Build configuration list for PBXNativeTarget "Mixtape" */;
 			buildPhases = (
-				A1234567890ABCDEF117 /* Sources */,
-				A1234567890ABCDEF118 /* Frameworks */,
-				A1234567890ABCDEF119 /* Resources */,
+				1A2B3C4D5E6F7890A19C /* Sources */,
+				1A2B3C4D5E6F7890A19D /* Frameworks */,
+				1A2B3C4D5E6F7890A19E /* Resources */,
 			);
 			buildRules = (
 			);
@@ -128,25 +117,25 @@
 			);
 			name = Mixtape;
 			productName = Mixtape;
-			productReference = A1234567890ABCDEF121 /* Mixtape.app */;
+			productReference = 1A2B3C4D5E6F7890A1A0 /* Mixtape.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		A1234567890ABCDEF113 /* Project object */ = {
+		1A2B3C4D5E6F7890A198 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
-					A1234567890ABCDEF120 = {
+					1A2B3C4D5E6F7890A19F = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
-			buildConfigurationList = A1234567890ABCDEF116 /* Build configuration list for PBXProject "Mixtape" */;
+			buildConfigurationList = 1A2B3C4D5E6F7890A19B /* Build configuration list for PBXProject "Mixtape" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -154,48 +143,47 @@
 				en,
 				Base,
 			);
-			mainGroup = A1234567890ABCDEF112;
-			productRefGroup = A1234567890ABCDEF122 /* Products */;
+			mainGroup = 1A2B3C4D5E6F7890A197;
+			productRefGroup = 1A2B3C4D5E6F7890A1A1 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A1234567890ABCDEF120 /* Mixtape */,
+				1A2B3C4D5E6F7890A19F /* Mixtape */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A1234567890ABCDEF119 /* Resources */ = {
+		1A2B3C4D5E6F7890A19E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1234567890ABCDEF129 /* Preview Assets.xcassets in Resources */,
-				A1234567890ABCDEF127 /* Assets.xcassets in Resources */,
+				1A2B3C4D5E6F7890A1B6 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A1234567890ABCDEF117 /* Sources */ = {
+		1A2B3C4D5E6F7890A19C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1234567890ABCDEF125 /* ContentView.swift in Sources */,
-				A1234567890ABCDEF135 /* NowPlayingView.swift in Sources */,
-				A1234567890ABCDEF137 /* MiniPlayerView.swift in Sources */,
-				A1234567890ABCDEF139 /* MusicLibraryView.swift in Sources */,
-				A1234567890ABCDEF131 /* AudioManager.swift in Sources */,
-				A1234567890ABCDEF133 /* MusicCatalog.swift in Sources */,
-				A1234567890ABCDEF141 /* CarPlaySceneDelegate.swift in Sources */,
-				A1234567890ABCDEF123 /* MixtapeApp.swift in Sources */,
+				1A2B3C4D5E6F7890A1B4 /* ContentView.swift in Sources */,
+				1A2B3C4D5E6F7890A1BC /* NowPlayingView.swift in Sources */,
+				1A2B3C4D5E6F7890A1BE /* MiniPlayerView.swift in Sources */,
+				1A2B3C4D5E6F7890A1C0 /* MusicLibraryView.swift in Sources */,
+				1A2B3C4D5E6F7890A1B8 /* AudioManager.swift in Sources */,
+				1A2B3C4D5E6F7890A1BA /* MusicCatalog.swift in Sources */,
+				1A2B3C4D5E6F7890A1C2 /* CarPlaySceneDelegate.swift in Sources */,
+				1A2B3C4D5E6F7890A1B2 /* MixtapeApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		A1234567890ABCDEF149 /* Debug */ = {
+		1A2B3C4D5E6F7890A1C8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -257,7 +245,7 @@
 			};
 			name = Debug;
 		};
-		A1234567890ABCDEF150 /* Release */ = {
+		1A2B3C4D5E6F7890A1C9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -311,19 +299,17 @@
 			};
 			name = Release;
 		};
-		A1234567890ABCDEF151 /* Debug */ = {
+		1A2B3C4D5E6F7890A1CA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Mixtape/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Mixtape/Info.plist;
-				INFOPLIST_KEY_NSAppleMusicUsageDescription = "This app uses Apple Music to stream audio content.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -342,19 +328,17 @@
 			};
 			name = Debug;
 		};
-		A1234567890ABCDEF152 /* Release */ = {
+		1A2B3C4D5E6F7890A1CB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Mixtape/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Mixtape/Info.plist;
-				INFOPLIST_KEY_NSAppleMusicUsageDescription = "This app uses Apple Music to stream audio content.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -376,25 +360,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1234567890ABCDEF116 /* Build configuration list for PBXProject "Mixtape" */ = {
+		1A2B3C4D5E6F7890A19B /* Build configuration list for PBXProject "Mixtape" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A1234567890ABCDEF149 /* Debug */,
-				A1234567890ABCDEF150 /* Release */,
+				1A2B3C4D5E6F7890A1C8 /* Debug */,
+				1A2B3C4D5E6F7890A1C9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A1234567890ABCDEF148 /* Build configuration list for PBXNativeTarget "Mixtape" */ = {
+		1A2B3C4D5E6F7890A1C7 /* Build configuration list for PBXNativeTarget "Mixtape" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A1234567890ABCDEF151 /* Debug */,
-				A1234567890ABCDEF152 /* Release */,
+				1A2B3C4D5E6F7890A1CA /* Debug */,
+				1A2B3C4D5E6F7890A1CB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = A1234567890ABCDEF113 /* Project object */;
+	rootObject = 1A2B3C4D5E6F7890A198 /* Project object */;
 } 
