@@ -2,6 +2,8 @@
 
 A white-label music player template designed for **mixing engineers** to deliver professional, branded apps to their artist clients. Each app contains high-quality bundled audio files with lossless playback and in-vehicle integration.
 
+**Cross-Platform Support**: Complete Android and iOS implementations with Android Auto and CarPlay integration.
+
 ## ✨ Features
 
 ### 🎵 **Music Experience**
@@ -11,7 +13,9 @@ A white-label music player template designed for **mixing engineers** to deliver
 - **Complete playback controls**: play, pause, skip, seek, shuffle, repeat modes
 - **Remote music catalog** loaded from cloud sources with local fallback
 
-### 🚗 **Android Auto Integration** 
+### 🚗 **In-Vehicle Integration**
+
+#### **Android Auto**
 - **Dual service architecture**: 
   - MusicService (MediaSessionService) for phone app compatibility
   - AndroidAutoService (MediaBrowserServiceCompat) for Android Auto browsing
@@ -20,15 +24,31 @@ A white-label music player template designed for **mixing engineers** to deliver
 - **Seamless synchronization** between phone app and in-vehicle display
 - **Voice command support** through Google Assistant integration
 
-### 📱 **Phone App**
+#### **CarPlay (iOS)**
+- **Native CarPlay integration** with CarPlaySceneDelegate
+- **Browseable music library** organized by songs, artists, albums
+- **Now Playing integration** with vehicle controls and display
+- **Siri voice command support** for hands-free control
+- **Tab-based interface** matching iOS design patterns
+
+### 📱 **Phone Apps (Cross-Platform)**
+
+#### **Android**
 - **Material Design 3** with dynamic theming
 - **Multiple viewing modes**: library browsing, now playing, mini player
 - **Album art integration** throughout the interface
 - **Real-time playback state** synchronized across all interfaces
 
+#### **iOS**
+- **SwiftUI implementation** with native iOS design patterns
+- **Dynamic color theming** extracted from album artwork
+- **Gesture controls**: swipe navigation, tap to expand, pull to dismiss
+- **Background audio** with lock screen and Control Center integration
+- **Apple Watch support** and Shortcuts app compatibility
+
 ## 🏗️ Architecture
 
-### **Service Architecture**
+### **Android Architecture**
 ```
 ┌─ Phone App ────────────────┐    ┌─ Android Auto ─────────────┐
 │                            │    │                            │
@@ -49,21 +69,62 @@ A white-label music player template designed for **mixing engineers** to deliver
     └────────────────────┘            └─────────────────────┘
 ```
 
+### **iOS Architecture**
+```
+┌─ iPhone App ───────────────┐    ┌─ CarPlay ──────────────────┐
+│                            │    │                            │
+│  ContentView (SwiftUI)     │    │  Car Dashboard Interface   │
+│  NowPlayingView           │    │  Browse + Now Playing UI   │
+│  MiniPlayerView           │    │                            │
+│  MusicLibraryView         │    │                            │
+│                            │    │                            │
+└────────────┬───────────────┘    └────────────┬───────────────┘
+             │                                 │
+             ▼                                 ▼
+    ┌────────────────────┐            ┌─────────────────────┐
+    │   AudioManager     │            │ CarPlaySceneDelegate│
+    │ (AVFoundation)     │            │ (CarPlay Framework) │
+    │                    │            │                     │
+    │ - AVAudioEngine    │◄───────────┤ - Shared Player     │
+    │ - MPNowPlayingInfo │            │ - CPListTemplate    │
+    │ - Remote Commands  │            │ - Browse Capability │
+    └────────────────────┘            └─────────────────────┘
+```
+
 ### **Key Components**
+
+#### **Android**
 - **MusicService**: Core playback service using Media3 ExoPlayer
 - **AndroidAutoService**: Browser service for Android Auto UI
 - **MusicServiceConnection**: Bridge between UI and services
-- **JsonSource**: Remote catalog management with network loading
+- **LocalBundledSource**: Bundled audio file management
 - **UampNotificationManager**: Rich media notifications
+
+#### **iOS**
+- **AudioManager**: Core audio service using AVFoundation
+- **CarPlaySceneDelegate**: CarPlay integration with browseable interface
+- **MusicCatalog**: Shared catalog management with network loading
+- **ContentView**: Main SwiftUI navigation and app structure
+- **NowPlayingView**: Full-screen player with dynamic theming
 
 ## 🚀 Getting Started
 
 ### **Prerequisites**
+
+#### **Android Development**
 - Android Studio Arctic Fox (2020.3.1) or later
 - Android 6.0 (API level 23) or higher
 - Android Auto compatible vehicle or Android Auto Desktop Head Unit for testing
 
-### **Building the App**
+#### **iOS Development (macOS only)**
+- Xcode 14.0 or later
+- iOS 15.0 or higher
+- CarPlay compatible vehicle or CarPlay Simulator for testing
+- Apple Developer account for device testing
+
+### **Building the Apps**
+
+#### **Android**
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -74,6 +135,18 @@ cd mixtape-player
 
 # Install on connected device
 adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+#### **iOS**
+```bash
+# Navigate to iOS project
+cd ios-mixtape
+
+# Open in Xcode
+open Mixtape.xcodeproj
+
+# Or build from command line
+xcodebuild -project Mixtape.xcodeproj -scheme Mixtape -destination 'platform=iOS Simulator,name=iPhone 15' build
 ```
 
 ### **Android Auto Testing**
@@ -94,27 +167,85 @@ adb shell am start -n "com.google.android.projection.gearhead/.MainActivity"
 # Launch Desktop Head Unit and connect phone
 ```
 
+### **CarPlay Testing**
+
+#### **Option 1: CarPlay Simulator (Development)**
+```bash
+# In Xcode, go to Window > Devices and Simulators
+# Select "CarPlay Simulator" 
+# Launch iOS app and test CarPlay interface
+```
+
+#### **Option 2: Real Vehicle Testing**
+1. Connect iPhone via USB to CarPlay compatible vehicle
+2. Launch Mixtape app and start playing music
+3. Access through vehicle's CarPlay interface
+4. Test browsing, Now Playing, and Siri commands
+
 ## 🛠️ Development
 
-### **Project Structure**
+### **Monorepo Structure**
 ```
-├── app/                    # Main Android application module
-├── common/                 # Shared code and services  
-├── automotive/            # Android Automotive OS specific code
-└── docs/                  # Documentation and guides
+mixtape-player/
+├── Android/
+│   ├── app/                    # Main Android application module
+│   ├── common/                 # Shared Android code and services  
+│   ├── automotive/            # Android Automotive OS specific code
+│   ├── gradle/                # Gradle wrapper and configuration
+│   ├── build.gradle           # Android project build configuration
+│   └── settings.gradle        # Android module settings
+├── iOS/
+│   └── ios-mixtape/           # Complete iOS Xcode project
+│       ├── Mixtape/           # Main iOS app source code
+│       │   ├── Views/         # SwiftUI views (NowPlaying, MiniPlayer, etc.)
+│       │   ├── Services/      # AudioManager, CarPlaySceneDelegate
+│       │   ├── Models/        # MusicCatalog, Track data models
+│       │   └── ContentView.swift # Main app navigation
+│       ├── Mixtape.xcodeproj  # Xcode project file
+│       ├── Info.plist         # iOS app configuration
+│       └── build.sh           # iOS build script
+├── assets/
+│   ├── audio/                 # High-quality source files (FLAC/WAV)
+│   └── branding/             # Client logos, app icons, artwork
+├── scripts/
+│   └── build-client-app.py   # Automated white-label build script
+├── client-builds/            # Output directory for client deliverables
+├── client-config.json        # Client customization settings
+└── docs/                     # Documentation and guides
 ```
 
 ### **Key Files**
+
+#### **Android**
 - `MusicService.kt` - Core music playback service
 - `AndroidAutoService.kt` - Android Auto browsing integration
 - `MusicServiceConnection.kt` - Service communication layer
-- `JsonSource.kt` - Music catalog management
+- `LocalBundledSource.kt` - Bundled audio file management
 
-### **Testing Android Auto Integration**
+#### **iOS**
+- `AudioManager.swift` - Core audio service using AVFoundation
+- `CarPlaySceneDelegate.swift` - CarPlay integration and interface
+- `MusicCatalog.swift` - Music catalog and track management
+- `ContentView.swift` - Main SwiftUI app navigation
+- `NowPlayingView.swift` - Full-screen player interface
+
+### **Testing Vehicle Integration**
+
+#### **Android Auto Testing**
 1. **Enable Developer Options** on Android device
 2. **Install Android Auto** from Play Store
 3. **Connect to Desktop Head Unit** or vehicle
 4. **Test browsing and playback** functionality
+
+#### **CarPlay Testing**
+1. **Enable CarPlay** in iOS Settings > General > CarPlay
+2. **Connect to CarPlay Simulator** in Xcode or compatible vehicle
+3. **Test in CarPlay Simulator**:
+   ```bash
+   # Launch CarPlay Simulator from Xcode
+   # Window > Devices and Simulators > CarPlay Simulator
+   ```
+4. **Test browsing and Now Playing** functionality
 
 ## 🎵 Music Catalog
 
@@ -132,8 +263,16 @@ The app includes proper Android Auto configuration:
 - `allowed_media_browser_callers.xml` - Security for media browsing
 - Manifest declarations for Android Auto support
 
+### **CarPlay Setup (iOS)**
+The iOS app includes proper CarPlay configuration:
+- `Info.plist` - CarPlay capability declarations
+- `CarPlaySceneDelegate.swift` - CarPlay scene management
+- Audio session setup for vehicle integration
+- MPNowPlayingInfoCenter integration
+
 ### **Media Session Integration**
-- Full Media3 MediaSession implementation
+- **Android**: Full Media3 MediaSession implementation
+- **iOS**: MPNowPlayingInfoCenter and remote command handling
 - Proper metadata handling for Now Playing display
 - Synchronized playback state across all interfaces
 
@@ -145,9 +284,15 @@ The app includes proper Android Auto configuration:
 
 ## 🐛 Known Issues
 
+### **Android**
 - Shuffle and repeat buttons may not appear in some Android Auto implementations
 - Album art loading may be slow on poor network connections
 - Some vehicles may have limited Android Auto UI capabilities
+
+### **iOS**
+- CarPlay may require specific iOS version compatibility
+- Some vehicles may have limited CarPlay capabilities
+- Background audio requires proper iOS permissions setup
 
 ## 🤝 Contributing
 
