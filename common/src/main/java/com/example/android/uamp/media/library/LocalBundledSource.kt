@@ -68,9 +68,24 @@ class LocalBundledSource(
                 // Scan for artwork files and build artwork map
                 val artworkMap = scanArtworkFiles()
                 
+                android.util.Log.d(TAG, "Scanned artwork map: $artworkMap")
+                
                 // Convert to MediaMetadata with bundled file URIs and artwork
                 musicCatalog.map { track ->
                     val trackArtwork = artworkMap[track.trackNumber] ?: artworkMap[0] // 0 = fallback album art
+                    
+                    // Determine the best artwork URI - prioritize scanned artwork over catalog reference
+                    val artworkUri = when {
+                        trackArtwork != null -> {
+                            android.util.Log.d(TAG, "Using scanned artwork for track ${track.trackNumber}: ${trackArtwork.imageUri}")
+                            trackArtwork.imageUri
+                        }
+                        else -> {
+                            val fallbackUri = Uri.parse("android.resource://${context.packageName}/drawable/${track.artworkResource}")
+                            android.util.Log.d(TAG, "Using catalog fallback artwork for track ${track.trackNumber}: $fallbackUri")
+                            fallbackUri
+                        }
+                    }
                     
                     MediaMetadata.Builder()
                         .setTitle(track.title)
@@ -80,7 +95,7 @@ class LocalBundledSource(
                         .setComposer(track.composer)
                         .setTrackNumber(track.trackNumber)
                         .setDiscNumber(track.discNumber)
-                        .setArtworkUri(trackArtwork?.imageUri ?: Uri.parse("android.resource://${context.packageName}/drawable/${track.artworkResource}"))
+                        .setArtworkUri(artworkUri)
                         .setExtras(Bundle().apply {
                             putString("media_id", track.id)
                             putString("media_uri", "android.resource://${context.packageName}/raw/${track.audioResource}")
@@ -111,80 +126,79 @@ class LocalBundledSource(
     }
 
     /**
-     * Scan assets/artwork directory for video and image files
+     * Scan drawable and raw resource directories for processed artwork files
      * Returns map of track number to artwork info
      */
     private fun scanArtworkFiles(): Map<Int, ArtworkInfo> {
         val artworkMap = mutableMapOf<Int, ArtworkInfo>()
         
         try {
-            val assetManager = context.assets
-            val artworkFiles = assetManager.list("artwork") ?: emptyArray()
+            android.util.Log.d(TAG, "Scanning for processed artwork resources...")
             
-            android.util.Log.d(TAG, "Found ${artworkFiles.size} artwork files")
-            
-            // Scan for fallback album art first
-            val fallbackImage = artworkFiles.find { 
-                it.lowercase().startsWith("album-art.") && 
-                (it.lowercase().endsWith(".png") || it.lowercase().endsWith(".jpg") || it.lowercase().endsWith(".jpeg"))
-            }
-            
-            fallbackImage?.let { filename ->
-                val resourceName = "album_art_fallback"
-                val imageUri = Uri.parse("android.resource://${context.packageName}/drawable/$resourceName")
+            // Check for fallback album art first
+            val fallbackResourceName = "album_art_fallback"
+            if (hasDrawableResource(fallbackResourceName)) {
+                val imageUri = Uri.parse("android.resource://${context.packageName}/drawable/$fallbackResourceName")
                 artworkMap[0] = ArtworkInfo(ArtworkType.IMAGE, imageUri, null)
-                android.util.Log.d(TAG, "Found fallback album art: $filename")
+                android.util.Log.d(TAG, "Found fallback album art resource: $fallbackResourceName")
             }
             
-            // Scan for track-specific artwork
-            artworkFiles.forEach { filename ->
-                val trackNumber = extractTrackNumber(filename)
-                if (trackNumber > 0) {
-                    val artworkInfo = when {
-                        filename.lowercase().endsWith(".mp4") -> {
-                            // Video artwork
-                            val resourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
-                            val videoUri = Uri.parse("android.resource://${context.packageName}/raw/$resourceName")
-                            // For video, we'll also need a thumbnail image
-                            val thumbnailUri = Uri.parse("android.resource://${context.packageName}/drawable/track_${trackNumber.toString().padStart(2, '0')}_thumb")
-                            ArtworkInfo(ArtworkType.VIDEO, thumbnailUri, videoUri)
-                        }
-                        filename.lowercase().endsWith(".png") || 
-                        filename.lowercase().endsWith(".jpg") || 
-                        filename.lowercase().endsWith(".jpeg") -> {
-                            // Image artwork
-                            val resourceName = "track_${trackNumber.toString().padStart(2, '0')}_art"
-                            val imageUri = Uri.parse("android.resource://${context.packageName}/drawable/$resourceName")
-                            ArtworkInfo(ArtworkType.IMAGE, imageUri, null)
-                        }
-                        else -> null
-                    }
-                    
-                    artworkInfo?.let {
-                        artworkMap[trackNumber] = it
-                        android.util.Log.d(TAG, "Found artwork for track $trackNumber: $filename (${it.type})")
-                    }
+            // Scan for track-specific artwork (tracks 1-20 to be safe)
+            for (trackNumber in 1..20) {
+                val trackPadded = trackNumber.toString().padStart(2, '0')
+                
+                // Check for video artwork first (higher priority)
+                val videoResourceName = "track_${trackPadded}_video"
+                val thumbResourceName = "track_${trackPadded}_thumb"
+                
+                if (hasRawResource(videoResourceName)) {
+                    // For video artwork, always use fallback album art as thumbnail for better visual consistency
+                    val thumbnailUri = Uri.parse("android.resource://${context.packageName}/drawable/album_art_fallback")
+                    val videoUri = Uri.parse("android.resource://${context.packageName}/raw/$videoResourceName")
+                    artworkMap[trackNumber] = ArtworkInfo(ArtworkType.VIDEO, thumbnailUri, videoUri)
+                    android.util.Log.d(TAG, "Found video artwork for track $trackNumber: $videoResourceName + album_art_fallback thumbnail")
+                } else {
+                    // For all other tracks, use the fallback album art to ensure consistent artwork display
+                    val imageUri = Uri.parse("android.resource://${context.packageName}/drawable/album_art_fallback")
+                    artworkMap[trackNumber] = ArtworkInfo(ArtworkType.IMAGE, imageUri, null)
+                    android.util.Log.d(TAG, "Using fallback album art for track $trackNumber")
                 }
             }
             
+            android.util.Log.d(TAG, "Final artwork map: $artworkMap")
+            
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error scanning artwork files", e)
+            android.util.Log.e(TAG, "Error scanning artwork resources", e)
         }
         
         return artworkMap
     }
 
     /**
-     * Extract track number from filename (e.g., "01_title.mp4" -> 1)
+     * Check if a drawable resource exists
      */
-    private fun extractTrackNumber(filename: String): Int {
+    private fun hasDrawableResource(resourceName: String): Boolean {
         return try {
-            val match = Regex("^(\\d{1,2})_").find(filename)
-            match?.groupValues?.get(1)?.toInt() ?: 0
+            val resourceId = context.resources.getIdentifier(resourceName, "drawable", context.packageName)
+            resourceId != 0
         } catch (e: Exception) {
-            0
+            false
         }
     }
+
+    /**
+     * Check if a raw resource exists
+     */
+    private fun hasRawResource(resourceName: String): Boolean {
+        return try {
+            val resourceId = context.resources.getIdentifier(resourceName, "raw", context.packageName)
+            resourceId != 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+
 
     /**
      * Load the music catalog from the assets folder.

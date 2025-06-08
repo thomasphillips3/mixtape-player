@@ -758,25 +758,25 @@ class NowPlayingFragment : Fragment() {
         
         // Apply colors to text
         binding.title.setTextColor(primaryColor)
-        binding.subtitle.setTextColor(secondaryColor)
-        binding.duration.setTextColor(secondaryColor)
+        binding.subtitle.setTextColor(primaryColor)
+        binding.duration.setTextColor(primaryColor)
 
-        // Apply colors to control buttons using modern ColorFilter approach
+        // Apply primary color to ALL control buttons for consistent visibility
         binding.mediaButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(primaryColor, android.graphics.BlendMode.SRC_IN)
-        binding.previousButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(secondaryColor, android.graphics.BlendMode.SRC_IN)
-        binding.nextButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(secondaryColor, android.graphics.BlendMode.SRC_IN)
+        binding.previousButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(primaryColor, android.graphics.BlendMode.SRC_IN)
+        binding.nextButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(primaryColor, android.graphics.BlendMode.SRC_IN)
         binding.collapseButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(primaryColor, android.graphics.BlendMode.SRC_IN)
-        binding.repeatButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(secondaryColor, android.graphics.BlendMode.SRC_IN)
-        binding.shuffleButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(secondaryColor, android.graphics.BlendMode.SRC_IN)
+        binding.repeatButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(primaryColor, android.graphics.BlendMode.SRC_IN)
+        binding.shuffleButton.drawable?.colorFilter = android.graphics.BlendModeColorFilter(primaryColor, android.graphics.BlendMode.SRC_IN)
 
-        // Apply colors to seek bar
+        // Apply colors to seek bar - use primary color for better visibility
         binding.seekBar.progressTintList = android.content.res.ColorStateList.valueOf(primaryColor)
         binding.seekBar.thumbTintList = android.content.res.ColorStateList.valueOf(primaryColor)
         binding.seekBar.progressBackgroundTintList = android.content.res.ColorStateList.valueOf(
-            android.graphics.Color.argb(100, 
-                android.graphics.Color.red(secondaryColor),
-                android.graphics.Color.green(secondaryColor),
-                android.graphics.Color.blue(secondaryColor)
+            android.graphics.Color.argb(60, 
+                android.graphics.Color.red(primaryColor),
+                android.graphics.Color.green(primaryColor),
+                android.graphics.Color.blue(primaryColor)
             )
         )
     }
