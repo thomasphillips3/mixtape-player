@@ -85,19 +85,24 @@ class MediaItemFragment : Fragment() {
                 viewModel.playMediaId(clickedItem.mediaId)
             }
             
-            // Add scroll listener to intelligently show/hide mini player
+            // Add scroll listener to show mini player and handle touch blocking
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
-                    handleMiniPlayerVisibility(recyclerView)
+                    updateItemTouchability(recyclerView)
                 }
                 
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
                     
-                    // Also check visibility when scroll state changes
+                    // Always show mini player if music is playing
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                        showMiniPlayerIfPlaying()
+                    }
+                    
+                    // Update touch handling when scroll stops
                     if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        handleMiniPlayerVisibility(recyclerView)
+                        updateItemTouchability(recyclerView)
                     }
                 }
             })
@@ -133,7 +138,7 @@ class MediaItemFragment : Fragment() {
         (binding.list.adapter as? MediaItemAdapter)?.updateTheme(theme)
     }
 
-    private fun handleMiniPlayerVisibility(recyclerView: RecyclerView) {
+    private fun updateItemTouchability(recyclerView: RecyclerView) {
         // Get the mini player fragment
         val activity = activity ?: return
         val nowPlayingFragment = activity.supportFragmentManager
@@ -238,11 +243,26 @@ class MediaItemViewHolder(
     private val subtitleView: TextView = view.findViewById(R.id.subtitle)
     private val albumArt: ImageView = view.findViewById(R.id.albumArt)
     private val playButton: ImageView = view.findViewById(R.id.item_state)
+    private var isObscured = false
 
     init {
         view.setOnClickListener {
-            item?.let { itemClickedListener(it) }
+            // Only handle click if not obscured
+            if (!isObscured) {
+                item?.let { itemClickedListener(it) }
+            }
         }
+    }
+    
+    fun setObscured(obscured: Boolean) {
+        isObscured = obscured
+        
+        // Visual feedback for obscured items
+        itemView.alpha = if (obscured) 0.4f else 1.0f
+        
+        // Disable interactions for obscured items
+        itemView.isClickable = !obscured
+        playButton.isClickable = !obscured
     }
 
     fun bind(item: MediaItemData, theme: MainActivityViewModel.AppTheme?) {
