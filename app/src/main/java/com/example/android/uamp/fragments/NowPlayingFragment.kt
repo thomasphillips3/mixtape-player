@@ -113,7 +113,7 @@ class NowPlayingFragment : Fragment() {
             if (shouldShow && !isFullScreen) {
                 // Add a small delay to ensure the view is fully visible before starting timer
                 Handler(Looper.getMainLooper()).postDelayed({
-                    if (_binding != null && !isFullScreen && binding.root.visibility == View.VISIBLE) {
+                    if (_binding != null && !isFullScreen && binding.root.visibility == View.VISIBLE && !isInMediaItemFragment()) {
                         resetAutoHideTimer()
                     }
                 }, 100) // 100ms delay
@@ -376,11 +376,17 @@ class NowPlayingFragment : Fragment() {
     }
 
     private fun resetAutoHideTimer() {
+        // Don't start auto-hide timer if we're in MediaItemFragment context
+        if (isInMediaItemFragment()) {
+            return
+        }
+        
         cancelAutoHideTimer()
         
         hideRunnable = Runnable {
             // Only hide if we're still in mini player mode and fragment is still valid
-            if (_binding != null && !isFullScreen && binding.root.visibility == View.VISIBLE) {
+            // Also check we're not in MediaItemFragment
+            if (_binding != null && !isFullScreen && binding.root.visibility == View.VISIBLE && !isInMediaItemFragment()) {
                 hideMiniPlayer()
             }
         }
@@ -424,7 +430,10 @@ class NowPlayingFragment : Fragment() {
             fadeIn.duration = 300
             fadeIn.start()
             
-            resetAutoHideTimer()
+            // Only start auto-hide timer if NOT in MediaItemFragment
+            if (!isInMediaItemFragment()) {
+                resetAutoHideTimer()
+            }
         }
     }
 
@@ -442,7 +451,7 @@ class NowPlayingFragment : Fragment() {
                 // If mini player is already visible, reset the auto-hide timer
                 // Add a small delay to ensure the UI update is complete
                 Handler(Looper.getMainLooper()).postDelayed({
-                    if (_binding != null && !isFullScreen && binding.root.visibility == View.VISIBLE) {
+                    if (_binding != null && !isFullScreen && binding.root.visibility == View.VISIBLE && !isInMediaItemFragment()) {
                         resetAutoHideTimer()
                     }
                 }, 50) // Small delay for UI update completion
@@ -821,8 +830,10 @@ class NowPlayingFragment : Fragment() {
         if (!isFullScreen && isPlayingMusic && binding.root.visibility != View.VISIBLE) {
             showMiniPlayer()
         } else if (!isFullScreen && binding.root.visibility == View.VISIBLE) {
-            // If already visible, just reset the auto-hide timer
-            resetAutoHideTimer()
+            // If already visible, only reset auto-hide timer if NOT in MediaItemFragment
+            if (!isInMediaItemFragment()) {
+                resetAutoHideTimer()
+            }
         }
     }
 
@@ -833,6 +844,19 @@ class NowPlayingFragment : Fragment() {
         if (!isFullScreen && binding.root.visibility == View.VISIBLE) {
             resetAutoHideTimer()
         }
+    }
+
+    /**
+     * Check if we're currently in a MediaItemFragment context
+     * (i.e., the MediaItemFragment is visible in the main container)
+     */
+    private fun isInMediaItemFragment(): Boolean {
+        val activity = activity ?: return false
+        val fragmentManager = activity.supportFragmentManager
+        
+        // Check if there's a MediaItemFragment in the main container
+        val mainFragment = fragmentManager.findFragmentById(R.id.mediaItemFragment)
+        return mainFragment is MediaItemFragment
     }
 
     private fun updateRepeatButton(repeatMode: Int) {
