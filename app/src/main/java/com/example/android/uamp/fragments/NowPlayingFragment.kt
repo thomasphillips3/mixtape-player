@@ -930,6 +930,43 @@ class NowPlayingFragment : Fragment() {
         }
     }
 
+    private fun updateSeekBarAndCurrentTime(position: Long) {
+        // Check if fragment is still valid before accessing binding
+        if (_binding == null) return
+        
+        // Get the total duration from the current metadata
+        val totalDuration = viewModel.mediaMetadata.value?.let { metadata ->
+            // Parse duration from the metadata duration string (format: "X:XX")
+            val durationStr = metadata.duration
+            val parts = durationStr.split(":")
+            if (parts.size == 2) {
+                val minutes = parts[0].toIntOrNull() ?: 0
+                val seconds = parts[1].toIntOrNull() ?: 0
+                (minutes * 60 + seconds) * 1000L // Convert to milliseconds
+            } else {
+                0L
+            }
+        } ?: 0L
+        
+        if (totalDuration > 0) {
+            // Update seek bar progress (seek bar max should be duration in seconds)
+            binding.seekBar.max = (totalDuration / 1000).toInt()
+            binding.seekBar.progress = (position / 1000).toInt()
+        }
+        
+        // Update current time display 
+        val currentTimeText = NowPlayingFragmentViewModel.NowPlayingMetadata.timestampToMSS(position)
+        val totalTimeText = NowPlayingFragmentViewModel.NowPlayingMetadata.timestampToMSS(totalDuration)
+        
+        // Show current time / total time format
+        if (position > 0 && totalDuration > 0) {
+            binding.duration.text = "$currentTimeText / $totalTimeText"
+        } else if (totalDuration > 0) {
+            // Show just total duration if position is 0
+            binding.duration.text = "0:00 / $totalTimeText"
+        }
+    }
+
     companion object {
         private const val TAG = "NowPlayingFragment"
         
