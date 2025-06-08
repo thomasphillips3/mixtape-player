@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
                     .replace(R.id.mediaItemFragment, fragment)
                     .commit()
                 
-                // Auto-play the first track when app launches (with delay)
+                // Auto-play the first track when app launches
                 autoPlayFirstTrack()
             } else {
                 Log.d(TAG, "Fragment already exists")
@@ -143,36 +143,33 @@ class MainActivity : AppCompatActivity() {
         viewModel.musicServiceConnection.setRepeatMode(androidx.media3.common.Player.REPEAT_MODE_ALL)
         viewModel.musicServiceConnection.setShuffleMode(false)
         
-        // Add a delay to ensure catalog is loaded before subscribing
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            Log.d(TAG, "Attempting to subscribe to catalog after delay")
-            viewModel.musicServiceConnection.subscribe("/") { mediaItems ->
-                Log.d(TAG, "Received ${mediaItems.size} media items in auto-play callback")
-                if (mediaItems.isNotEmpty()) {
-                    val firstTrack = mediaItems[0]
-                    Log.d(TAG, "Auto-playing first track: ${firstTrack.mediaMetadata.title}")
-                    viewModel.musicServiceConnection.playMedia(firstTrack.mediaId)
-                } else {
-                    Log.w(TAG, "No tracks available for auto-play, retrying...")
-                    // Retry one more time after additional delay
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        retryAutoPlay()
-                    }, 2000)
-                }
-            }
-        }, 2000) // 2 second delay to ensure catalog loading is complete
-    }
-
-    private fun retryAutoPlay() {
-        Log.d(TAG, "Retrying auto-play...")
+        // Subscribe to the catalog to get the first track
         viewModel.musicServiceConnection.subscribe("/") { mediaItems ->
-            Log.d(TAG, "Retry: Received ${mediaItems.size} media items")
             if (mediaItems.isNotEmpty()) {
                 val firstTrack = mediaItems[0]
-                Log.d(TAG, "Auto-playing first track (retry): ${firstTrack.mediaMetadata.title}")
+                Log.d(TAG, "Auto-playing first track: ${firstTrack.mediaMetadata.title}")
                 viewModel.musicServiceConnection.playMedia(firstTrack.mediaId)
             } else {
-                Log.w(TAG, "Still no tracks available after retry")
+                Log.w(TAG, "No tracks available for auto-play")
+            }
+        }
+    }
+
+    private fun autoPlayFirstTrack() {
+        Log.d(TAG, "Auto-playing first track...")
+        
+        // Set default playback modes: repeat all, shuffle off
+        viewModel.musicServiceConnection.setRepeatMode(androidx.media3.common.Player.REPEAT_MODE_ALL)
+        viewModel.musicServiceConnection.setShuffleMode(false)
+        
+        // Subscribe to the catalog to get the first track
+        viewModel.musicServiceConnection.subscribe("/") { mediaItems ->
+            if (mediaItems.isNotEmpty()) {
+                val firstTrack = mediaItems[0]
+                Log.d(TAG, "Auto-playing first track: ${firstTrack.mediaMetadata.title}")
+                viewModel.musicServiceConnection.playMedia(firstTrack.mediaId)
+            } else {
+                Log.w(TAG, "No tracks available for auto-play")
             }
         }
     }

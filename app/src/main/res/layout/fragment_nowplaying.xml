@@ -23,7 +23,18 @@
     android:focusable="true"
     android:background="@android:color/transparent">
 
-    <!-- Album art fills the entire background -->
+    <!-- Video artwork background (for MP4 videos) -->
+    <VideoView
+        android:id="@+id/backgroundVideo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Image artwork background (for PNG/JPEG images) -->
     <ImageView
         android:id="@+id/albumArt"
         android:layout_width="match_parent"
@@ -35,6 +46,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/default_art" />
+
+    <!-- Dark overlay for better text readability -->
+    <View
+        android:id="@+id/darkOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#33000000"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Collapse button at the top -->
     <ImageButton

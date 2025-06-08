@@ -165,7 +165,7 @@ open class MusicService : MediaSessionService() {
         // This enables mixing engineers to deliver high-quality apps with client's music.
         mediaSource = LocalBundledSource(context = this)
         serviceScope.launch {
-            Log.d(TAG, "Starting to load catalog from: $remoteJsonSource")
+            Log.d(TAG, "Starting to load catalog from bundled source")
             mediaSource.load()
             
             // Check if loading was successful using the public API

@@ -19,6 +19,8 @@ package com.example.android.uamp.fragments
 import android.animation.ObjectAnimator
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -27,6 +29,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.VideoView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -43,25 +46,9 @@ import com.example.android.uamp.viewmodels.NowPlayingFragmentViewModel
 import kotlin.math.abs
 
 /**
- * A fragment representing a now playing screen.
+ * A fragment representing a now playing screen with support for both video and image artwork.
  */
 class NowPlayingFragment : Fragment() {
-
-    companion object {
-        fun newInstance(isFullScreen: Boolean = false) = NowPlayingFragment().apply {
-            arguments = Bundle().apply {
-                putBoolean("isFullScreen", isFullScreen)
-            }
-        }
-        
-        // Gesture thresholds
-        private const val SWIPE_THRESHOLD = 100
-        private const val SWIPE_VELOCITY_THRESHOLD = 100
-        
-        // Auto-hide settings
-        private const val AUTO_HIDE_DELAY_MS = 5000L // 5 seconds
-        private const val CONTROLS_HIDE_DELAY_MS = 5000L // 5 seconds for controls
-    }
 
     private val viewModel by viewModels<NowPlayingFragmentViewModel> {
         InjectorUtils.provideNowPlayingFragmentViewModel(requireContext())
@@ -84,14 +71,18 @@ class NowPlayingFragment : Fragment() {
     private val controlsHideHandler = Handler(Looper.getMainLooper())
     private var controlsHideRunnable: Runnable? = null
     
-    private val isFullScreen: Boolean
-        get() = arguments?.getBoolean("isFullScreen", false) ?: false
+    private var isFullScreen: Boolean = false
+
+    // Video artwork management
+    private var currentVideoView: VideoView? = null
+    private var isVideoArtwork = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentNowplayingBinding.inflate(inflater, container, false)
+        isFullScreen = arguments?.getBoolean("isFullScreen", false) ?: false
         return binding.root
     }
 
@@ -230,10 +221,33 @@ class NowPlayingFragment : Fragment() {
         if (!isFullScreen && binding.root.visibility == View.VISIBLE) {
             resetAutoHideTimer()
         }
+        
+        // Resume video playback if it was video artwork
+        if (isVideoArtwork && currentVideoView != null) {
+            try {
+                currentVideoView?.resume()
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "Failed to resume video", e)
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Pause video playback to save resources
+        if (isVideoArtwork && currentVideoView != null) {
+            try {
+                currentVideoView?.pause()
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "Failed to pause video", e)
+            }
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Stop video and clean up
+        stopVideo()
         cancelAutoHideTimer()
         cancelControlsHideTimer()
         _binding = null
@@ -434,39 +448,239 @@ class NowPlayingFragment : Fragment() {
                 }, 50) // Small delay for UI update completion
             }
             
-            // Load album art with dynamic color extraction
-            Glide.with(this)
-                .asBitmap()
-                .load(it.albumArtUri)
-                .placeholder(R.drawable.default_art)
-                .into(object : CustomTarget<Bitmap>() {
-                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                        // Check if fragment is still valid before accessing binding
-                        if (_binding == null) return
+            // Load artwork (video or image) based on metadata
+            loadArtwork(it)
+        }
+    }
+
+    private fun loadArtwork(metadata: NowPlayingFragmentViewModel.NowPlayingMetadata) {
+        // Get artwork type from metadata extras
+        val artworkType = getArtworkTypeFromMetadata()
+        val videoUri = getVideoUriFromMetadata()
+        
+        when (artworkType) {
+            "VIDEO" -> {
+                if (videoUri != null) {
+                    loadVideoArtwork(videoUri, metadata.albumArtUri)
+                } else {
+                    // Fallback to image if video URI is missing
+                    loadImageArtwork(metadata.albumArtUri)
+                }
+            }
+            else -> {
+                loadImageArtwork(metadata.albumArtUri)
+            }
+        }
+    }
+
+    private fun loadVideoArtwork(videoUri: Uri, thumbnailUri: Uri) {
+        isVideoArtwork = true
+        
+        // Show video view, hide image view
+        binding.backgroundVideo.visibility = View.VISIBLE
+        binding.albumArt.visibility = View.GONE
+        binding.darkOverlay.visibility = View.VISIBLE // Add overlay for better text readability
+        
+        // Setup video
+        setupVideoView(binding.backgroundVideo, videoUri)
+        
+        // Load thumbnail for palette extraction
+        loadThumbnailForPalette(thumbnailUri)
+    }
+
+    private fun loadImageArtwork(imageUri: Uri) {
+        isVideoArtwork = false
+        
+        // Stop any existing video
+        stopVideo()
+        
+        // Show image view, hide video view
+        binding.albumArt.visibility = View.VISIBLE
+        binding.backgroundVideo.visibility = View.GONE
+        binding.darkOverlay.visibility = View.GONE
+        
+        // Load image with dynamic color extraction
+        Glide.with(this)
+            .asBitmap()
+            .load(imageUri)
+            .placeholder(R.drawable.default_art)
+            .into(object : CustomTarget<Bitmap>() {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    // Check if fragment is still valid before accessing binding
+                    if (_binding == null) return
+                    
+                    // Set the album art
+                    binding.albumArt.setImageBitmap(resource)
+                    
+                    // Generate color palette from the bitmap
+                    Palette.from(resource).generate { palette ->
+                        // Check again in case fragment was destroyed during palette generation
+                        if (_binding == null) return@generate
                         
-                        // Set the album art
-                        binding.albumArt.setImageBitmap(resource)
-                        
-                        // Generate color palette from the bitmap
-                        Palette.from(resource).generate { palette ->
-                            // Check again in case fragment was destroyed during palette generation
-                            if (_binding == null) return@generate
-                            
-                            palette?.let { extractedPalette ->
-                                applyPaletteColors(extractedPalette)
-                            }
+                        palette?.let { extractedPalette ->
+                            applyPaletteColors(extractedPalette)
                         }
                     }
+                }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {
-                        // Check if fragment is still valid before accessing binding
-                        if (_binding == null) return
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    // Check if fragment is still valid before accessing binding
+                    if (_binding == null) return
+                    
+                    // Set placeholder and use default white colors
+                    binding.albumArt.setImageDrawable(placeholder)
+                    applyDefaultColors()
+                }
+            })
+    }
+
+    private fun setupVideoView(videoView: VideoView, videoUri: Uri) {
+        try {
+            currentVideoView = videoView
+            
+            videoView.setVideoURI(videoUri)
+            
+            // Set up video completion listener for looping
+            videoView.setOnCompletionListener { mediaPlayer ->
+                // Loop the video
+                mediaPlayer.isLooping = true
+                videoView.start()
+            }
+            
+            // Set up prepared listener
+            videoView.setOnPreparedListener { mediaPlayer ->
+                // Mute the video (background videos should be silent)
+                mediaPlayer.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                mediaPlayer.isLooping = true
+                
+                try {
+                    mediaPlayer.setVolume(0f, 0f) // Mute audio
+                } catch (e: Exception) {
+                    android.util.Log.w(TAG, "Failed to mute video", e)
+                }
+                
+                // Start playback
+                videoView.start()
+            }
+            
+            // Set up error listener
+            videoView.setOnErrorListener { _, what, extra ->
+                android.util.Log.e(TAG, "Video playback error: what=$what, extra=$extra")
+                // Fallback to image artwork
+                fallbackToImageArtwork()
+                true // Error handled
+            }
+            
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to setup video", e)
+            fallbackToImageArtwork()
+        }
+    }
+
+    private fun loadThumbnailForPalette(thumbnailUri: Uri) {
+        // Load thumbnail for color palette extraction (without displaying it)
+        Glide.with(this)
+            .asBitmap()
+            .load(thumbnailUri)
+            .into(object : CustomTarget<Bitmap>() {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    // Generate color palette from the thumbnail
+                    Palette.from(resource).generate { palette ->
+                        if (_binding == null) return@generate
                         
-                        // Set placeholder and use default white colors
-                        binding.albumArt.setImageDrawable(placeholder)
-                        applyDefaultColors()
+                        palette?.let { extractedPalette ->
+                            applyPaletteColors(extractedPalette)
+                        }
                     }
-                })
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    // Apply default colors if thumbnail fails
+                    applyDefaultColors()
+                }
+            })
+    }
+
+    private fun fallbackToImageArtwork() {
+        // Fallback to current track's image artwork if video fails
+        val metadata = viewModel.mediaMetadata.value
+        metadata?.let { loadImageArtwork(it.albumArtUri) }
+    }
+
+    private fun stopVideo() {
+        currentVideoView?.let { videoView ->
+            try {
+                if (videoView.isPlaying) {
+                    videoView.stopPlayback()
+                } else {
+                    // Video is not playing, no action needed
+                }
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "Error stopping video", e)
+            }
+        }
+        currentVideoView = null
+    }
+
+    private fun getArtworkTypeFromMetadata(): String? {
+        // Get artwork type from current playing metadata - simplified approach
+        return try {
+            // For now, check if we have video files based on track number
+            val metadata = viewModel.mediaMetadata.value
+            metadata?.id?.let { mediaId ->
+                // Extract track number from media ID if possible
+                val trackNumber = extractTrackNumberFromId(mediaId)
+                if (trackNumber > 0) {
+                    // Check if video resource exists for this track
+                    val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
+                    if (hasVideoResource(videoResourceName)) "VIDEO" else "IMAGE"
+                } else {
+                    "IMAGE"
+                }
+            } ?: "IMAGE"
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "Failed to get artwork type", e)
+            "IMAGE" // Default fallback
+        }
+    }
+
+    private fun getVideoUriFromMetadata(): Uri? {
+        return try {
+            val metadata = viewModel.mediaMetadata.value
+            val mediaId = metadata?.id
+            if (mediaId != null) {
+                val trackNumber = extractTrackNumberFromId(mediaId)
+                if (trackNumber > 0) {
+                    val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
+                    Uri.parse("android.resource://${requireContext().packageName}/raw/$videoResourceName")
+                } else {
+                    null
+                }
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "Failed to get video URI", e)
+            null
+        }
+    }
+
+    private fun extractTrackNumberFromId(mediaId: String): Int {
+        return try {
+            // Try to extract track number from media ID (assuming format like "track_01" or similar)
+            val match = Regex("(\\d+)").find(mediaId)
+            match?.value?.toInt() ?: 0
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    private fun hasVideoResource(resourceName: String): Boolean {
+        return try {
+            val resourceId = resources.getIdentifier(resourceName, "raw", requireContext().packageName)
+            resourceId != 0
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -573,7 +787,7 @@ class NowPlayingFragment : Fragment() {
         
         // Create a new instance for full screen - this will use the same layout
         // but without height constraints, showing the full album art
-        val fullScreenFragment = NowPlayingFragment.newInstance(true)
+        val fullScreenFragment = newInstance(true)
         parentFragmentManager.beginTransaction()
             .replace(android.R.id.content, fullScreenFragment)
             .addToBackStack(null)
@@ -581,12 +795,17 @@ class NowPlayingFragment : Fragment() {
     }
 
     private fun collapseFromFullScreen() {
-        // Navigate back to the previous fragment (MediaItemFragment)
+        // Pop the back stack to remove the full-screen fragment
         if (parentFragmentManager.backStackEntryCount > 0) {
             parentFragmentManager.popBackStack()
         } else {
-            // Fallback: if no back stack, finish the activity
-            activity?.finish()
+            // If no back stack, manually navigate back to the MediaItemFragment
+            activity?.let { mainActivity ->
+                // Remove this full-screen fragment from the content view
+                parentFragmentManager.beginTransaction()
+                    .remove(this)
+                    .commit()
+            }
         }
     }
 
@@ -707,6 +926,28 @@ class NowPlayingFragment : Fragment() {
                 
                 // Reset the controls hide timer
                 resetControlsHideTimer()
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "NowPlayingFragment"
+        
+        // Auto-hide delay for mini player (7 seconds)
+        private const val AUTO_HIDE_DELAY_MS = 7000L
+        
+        // Controls hide delay for full-screen mode (5 seconds)
+        private const val CONTROLS_HIDE_DELAY_MS = 5000L
+        
+        // Gesture detection thresholds
+        private const val SWIPE_THRESHOLD = 100
+        private const val SWIPE_VELOCITY_THRESHOLD = 100
+
+        fun newInstance(isFullScreen: Boolean = false): NowPlayingFragment {
+            return NowPlayingFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean("isFullScreen", isFullScreen)
+                }
             }
         }
     }

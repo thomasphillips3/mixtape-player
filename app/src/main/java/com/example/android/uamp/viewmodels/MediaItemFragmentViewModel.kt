@@ -95,9 +95,15 @@ class MediaItemFragmentViewModel(
 
     private fun loadMediaItems() {
         Log.d(TAG, "loadMediaItems called for mediaId: $mediaId")
+        Log.d(TAG, "MusicServiceConnection connected: ${musicServiceConnection.isConnected.value}")
+        
         // Subscribe to the MediaBrowser to get media items for this mediaId
         musicServiceConnection.subscribe(mediaId) { mediaItems ->
             Log.d(TAG, "Received ${mediaItems.size} media items in callback")
+            mediaItems.forEachIndexed { index, item ->
+                Log.d(TAG, "Item $index: mediaId=${item.mediaId}, title=${item.mediaMetadata.title}")
+            }
+            
             val itemData = mediaItems.map { item ->
                 MediaItemData(
                     mediaId = item.mediaId ?: "",

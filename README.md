@@ -1,326 +1,279 @@
-# Mixtape Player - Professional Audio Delivery Template
+# Mixtape Player - Professional White-Label Music App Template
 
-A white-label music player template designed for **mixing engineers** to deliver professional, branded apps to their artist clients. Each app contains high-quality bundled audio files with lossless playback and in-vehicle integration.
+**Transform your mixing engineering business with premium apps for artists**
 
-**Cross-Platform Support**: Complete Android and iOS implementations with Android Auto and CarPlay integration.
+*A production-ready template for mixing engineers to deliver professional music apps to their artist clients.*
 
-## ✨ Features
+---
 
-### 🎵 **Music Experience**
-- **Full-screen album art backgrounds** with dynamic color theming extracted from artwork
-- **Gesture controls**: swipe for track navigation, tap to expand, swipe down to dismiss
-- **Smart mini player** with auto-hide after 5 seconds of inactivity
-- **Complete playback controls**: play, pause, skip, seek, shuffle, repeat modes
-- **Remote music catalog** loaded from cloud sources with local fallback
+## 🎯 **Business Model**
 
-### 🚗 **In-Vehicle Integration**
+This template enables mixing engineers to offer **premium app delivery services** to artists:
 
-#### **Android Auto**
-- **Dual service architecture**: 
-  - MusicService (MediaSessionService) for phone app compatibility
-  - AndroidAutoService (MediaBrowserServiceCompat) for Android Auto browsing
-- **Full browsing capability** in Android Auto with searchable music library
-- **Now Playing screen** with track metadata, album artwork, and progress tracking
-- **Seamless synchronization** between phone app and in-vehicle display
-- **Voice command support** through Google Assistant integration
+- **Premium Pricing**: $500-3000 per custom app
+- **Recurring Revenue**: App store maintenance, updates, analytics
+- **Value Proposition**: Professional presentation, direct artist-fan connection
+- **Target Market**: Independent artists, record labels, music producers
 
-#### **CarPlay (iOS)**
-- **Native CarPlay integration** with CarPlaySceneDelegate
-- **Browseable music library** organized by songs, artists, albums
-- **Now Playing integration** with vehicle controls and display
-- **Siri voice command support** for hands-free control
-- **Tab-based interface** matching iOS design patterns
+For detailed business strategy, see [BUSINESS_GUIDE.md](BUSINESS_GUIDE.md)
 
-### 📱 **Phone Apps (Cross-Platform)**
+---
 
-#### **Android**
-- **Material Design 3** with dynamic theming
-- **Multiple viewing modes**: library browsing, now playing, mini player
-- **Album art integration** throughout the interface
-- **Real-time playback state** synchronized across all interfaces
+## ✨ **Key Features**
 
-#### **iOS**
-- **SwiftUI implementation** with native iOS design patterns
+### 🎵 **Audio Excellence**
+- **High-quality bundled audio** (FLAC, WAV support)
+- **Professional metadata** with mixing engineer credits
+- **Gapless playback** for seamless listening experience
+
+### 🎨 **Dynamic Visual Experience**
+- **Video & Image Artwork Support** - Individual track videos (MP4) or images (PNG/JPEG)
+- **Smart fallback system** - Album art when track-specific artwork unavailable
 - **Dynamic color theming** extracted from album artwork
-- **Gesture controls**: swipe navigation, tap to expand, pull to dismiss
-- **Background audio** with lock screen and Control Center integration
-- **Apple Watch support** and Shortcuts app compatibility
+- **Immersive full-screen Now Playing** with video backgrounds
 
-## 🏗️ Architecture
+### 🚗 **Android Auto Integration**
+- **Seamless car connectivity** - Browse and play music in compatible vehicles
+- **Professional presentation** - Clean interface optimized for driving
+- **Complete metadata display** - Track info, album art, and controls
 
-### **Android Architecture**
-```
-┌─ Phone App ────────────────┐    ┌─ Android Auto ─────────────┐
-│                            │    │                            │
-│  MainActivity              │    │  Car Infotainment System   │
-│  NowPlayingFragment        │    │  Browse + Now Playing UI   │
-│  MiniPlayerFragment        │    │                            │
-│                            │    │                            │
-└────────────┬───────────────┘    └────────────┬───────────────┘
-             │                                 │
-             ▼                                 ▼
-    ┌────────────────────┐            ┌─────────────────────┐
-    │   MusicService     │            │ AndroidAutoService  │
-    │ (MediaSessionService)          │ (MediaBrowserService) │
-    │                    │            │                     │
-    │ - ExoPlayer        │◄───────────┤ - Shared Player     │
-    │ - MediaSession     │            │ - MediaSession Sync │
-    │ - Notifications    │            │ - Browse Capability │
-    └────────────────────┘            └─────────────────────┘
-```
+### 📱 **Cross-Platform Support**
+- **Android** - Native Kotlin implementation
+- **iOS** - SwiftUI with CarPlay support (documented)
+- **Consistent experience** across all platforms
 
-### **iOS Architecture**
-```
-┌─ iPhone App ───────────────┐    ┌─ CarPlay ──────────────────┐
-│                            │    │                            │
-│  ContentView (SwiftUI)     │    │  Car Dashboard Interface   │
-│  NowPlayingView           │    │  Browse + Now Playing UI   │
-│  MiniPlayerView           │    │                            │
-│  MusicLibraryView         │    │                            │
-│                            │    │                            │
-└────────────┬───────────────┘    └────────────┬───────────────┘
-             │                                 │
-             ▼                                 ▼
-    ┌────────────────────┐            ┌─────────────────────┐
-    │   AudioManager     │            │ CarPlaySceneDelegate│
-    │ (AVFoundation)     │            │ (CarPlay Framework) │
-    │                    │            │                     │
-    │ - AVAudioEngine    │◄───────────┤ - Shared Player     │
-    │ - MPNowPlayingInfo │            │ - CPListTemplate    │
-    │ - Remote Commands  │            │ - Browse Capability │
-    └────────────────────┘            └─────────────────────┘
-```
+### 🎛️ **White-Label Customization**
+- **client-config.json** - Easy branding and content updates
+- **Automated build system** - Generate client apps efficiently
+- **Professional documentation** - Ready for client delivery
 
-### **Key Components**
+---
 
-#### **Android**
-- **MusicService**: Core playback service using Media3 ExoPlayer
-- **AndroidAutoService**: Browser service for Android Auto UI
-- **MusicServiceConnection**: Bridge between UI and services
-- **LocalBundledSource**: Bundled audio file management
-- **UampNotificationManager**: Rich media notifications
+## 🎬 **Video & Image Artwork**
 
-#### **iOS**
-- **AudioManager**: Core audio service using AVFoundation
-- **CarPlaySceneDelegate**: CarPlay integration with browseable interface
-- **MusicCatalog**: Shared catalog management with network loading
-- **ContentView**: Main SwiftUI navigation and app structure
-- **NowPlayingView**: Full-screen player with dynamic theming
+### Supported Formats
+- **Videos**: MP4 files for immersive track backgrounds
+- **Images**: PNG, JPEG for traditional album art
+- **Naming Convention**: `01_songname.mp4`, `02_artwork.png`, etc.
+- **Fallback**: `album-art.png` or `album-art.jpeg` for tracks without specific artwork
 
-## 🚀 Getting Started
+### Features
+- **Automatic detection** - App detects and uses appropriate artwork type
+- **Video management** - Muted, looping background videos
+- **Color extraction** - Dynamic theming from video thumbnails or images
+- **Seamless switching** - Smooth transitions between video and image tracks
 
-### **Prerequisites**
+### Setup Process
+1. Place artwork files in `assets/artwork/`
+2. Use track number prefix: `01_`, `02_`, etc.
+3. Run processing script: `python scripts/process-artwork.py`
+4. Rebuild the Android app
 
-#### **Android Development**
-- Android Studio Arctic Fox (2020.3.1) or later
-- Android 6.0 (API level 23) or higher
-- Android Auto compatible vehicle or Android Auto Desktop Head Unit for testing
+---
 
-#### **iOS Development (macOS only)**
-- Xcode 14.0 or later
-- iOS 15.0 or higher
-- CarPlay compatible vehicle or CarPlay Simulator for testing
-- Apple Developer account for device testing
+## 🚀 **Quick Start**
 
-### **Building the Apps**
-
-#### **Android**
+### 1. **Audio Setup**
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd mixtape-player
+# Place high-quality audio files in assets/audio/
+cp your-tracks/*.wav assets/audio/
 
-# Build debug APK
+# Generate catalog (automatically detects files)
+python scripts/generate_bundled_catalog.py
+```
+
+### 2. **Artwork Setup**
+```bash
+# Place video/image artwork in assets/artwork/
+cp track-videos/*.mp4 assets/artwork/
+cp track-images/*.png assets/artwork/
+cp album-art.png assets/artwork/
+
+# Process artwork files
+python scripts/process-artwork.py
+```
+
+### 3. **Client Customization**
+```json
+// Edit client-config.json
+{
+  "artistName": "Artist Name",
+  "appName": "Artist's Mixtape",
+  "primaryColor": "#1DB954",
+  "description": "Official music app"
+}
+```
+
+### 4. **Build & Test**
+```bash
+# Android
 ./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
 
-# Install on connected device
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+# Test in Android Auto (with compatible vehicle or Android Auto simulator)
 ```
 
-#### **iOS**
-```bash
-# Navigate to iOS project
-cd ios-mixtape
+---
 
-# Open in Xcode
-open Mixtape.xcodeproj
+## 📂 **Project Structure**
 
-# Or build from command line
-xcodebuild -project Mixtape.xcodeproj -scheme Mixtape -destination 'platform=iOS Simulator,name=iPhone 15' build
-```
-
-### **Android Auto Testing**
-
-#### **Option 1: Real Vehicle Testing**
-1. Connect phone via USB to Android Auto compatible vehicle
-2. Launch Mixtape app and start playing music
-3. Access through vehicle's Android Auto interface
-
-#### **Option 2: Desktop Head Unit (Development)**
-```bash
-# Install Android Auto Desktop Head Unit
-# Available from: https://developer.android.com/training/cars/testing
-
-# Enable Android Auto developer mode on phone
-adb shell am start -n "com.google.android.projection.gearhead/.MainActivity"
-
-# Launch Desktop Head Unit and connect phone
-```
-
-### **CarPlay Testing**
-
-#### **Option 1: CarPlay Simulator (Development)**
-```bash
-# In Xcode, go to Window > Devices and Simulators
-# Select "CarPlay Simulator" 
-# Launch iOS app and test CarPlay interface
-```
-
-#### **Option 2: Real Vehicle Testing**
-1. Connect iPhone via USB to CarPlay compatible vehicle
-2. Launch Mixtape app and start playing music
-3. Access through vehicle's CarPlay interface
-4. Test browsing, Now Playing, and Siri commands
-
-## 🛠️ Development
-
-### **Monorepo Structure**
 ```
 mixtape-player/
-├── Android/
-│   ├── app/                    # Main Android application module
-│   ├── common/                 # Shared Android code and services  
-│   ├── automotive/            # Android Automotive OS specific code
-│   ├── gradle/                # Gradle wrapper and configuration
-│   ├── build.gradle           # Android project build configuration
-│   └── settings.gradle        # Android module settings
-├── iOS/
-│   └── ios-mixtape/           # Complete iOS Xcode project
-│       ├── Mixtape/           # Main iOS app source code
-│       │   ├── Views/         # SwiftUI views (NowPlaying, MiniPlayer, etc.)
-│       │   ├── Services/      # AudioManager, CarPlaySceneDelegate
-│       │   ├── Models/        # MusicCatalog, Track data models
-│       │   └── ContentView.swift # Main app navigation
-│       ├── Mixtape.xcodeproj  # Xcode project file
-│       ├── Info.plist         # iOS app configuration
-│       └── build.sh           # iOS build script
 ├── assets/
-│   ├── audio/                 # High-quality source files (FLAC/WAV)
-│   └── branding/             # Client logos, app icons, artwork
+│   ├── audio/           # High-quality audio files (WAV, FLAC)
+│   └── artwork/         # Video/image artwork files
 ├── scripts/
-│   └── build-client-app.py   # Automated white-label build script
-├── client-builds/            # Output directory for client deliverables
-├── client-config.json        # Client customization settings
-└── docs/                     # Documentation and guides
+│   ├── generate_bundled_catalog.py  # Audio catalog generation
+│   └── process-artwork.py           # Artwork processing
+├── client-config.json   # White-label customization
+├── BUSINESS_GUIDE.md   # Business strategy & pricing
+└── README.md           # This file
 ```
 
-### **Key Files**
+---
 
-#### **Android**
-- `MusicService.kt` - Core music playback service
-- `AndroidAutoService.kt` - Android Auto browsing integration
-- `MusicServiceConnection.kt` - Service communication layer
-- `LocalBundledSource.kt` - Bundled audio file management
+## 🔧 **Technical Architecture**
 
-#### **iOS**
-- `AudioManager.swift` - Core audio service using AVFoundation
-- `CarPlaySceneDelegate.swift` - CarPlay integration and interface
-- `MusicCatalog.swift` - Music catalog and track management
-- `ContentView.swift` - Main SwiftUI app navigation
-- `NowPlayingView.swift` - Full-screen player interface
+### **Android Components**
+- **MusicService** - MediaSessionService for phone playback
+- **AndroidAutoService** - MediaBrowserServiceCompat for Android Auto
+- **LocalBundledSource** - Manages bundled audio and artwork files
+- **NowPlayingFragment** - Video/image artwork with dynamic theming
 
-### **Testing Vehicle Integration**
+### **Audio Pipeline**
+- **ExoPlayer** - Professional audio playback engine
+- **MediaSession** - Android Auto and notification integration
+- **Bundled Resources** - No network dependency, instant loading
 
-#### **Android Auto Testing**
-1. **Enable Developer Options** on Android device
-2. **Install Android Auto** from Play Store
-3. **Connect to Desktop Head Unit** or vehicle
-4. **Test browsing and playback** functionality
+### **Artwork System**
+- **Automatic Detection** - Scans for track-specific artwork files
+- **Video Support** - VideoView with muted, looping playback
+- **Color Extraction** - Palette API for dynamic theming
+- **Resource Management** - Efficient memory and lifecycle handling
 
-#### **CarPlay Testing**
-1. **Enable CarPlay** in iOS Settings > General > CarPlay
-2. **Connect to CarPlay Simulator** in Xcode or compatible vehicle
-3. **Test in CarPlay Simulator**:
-   ```bash
-   # Launch CarPlay Simulator from Xcode
-   # Window > Devices and Simulators > CarPlay Simulator
-   ```
-4. **Test browsing and Now Playing** functionality
+---
 
-## 🎵 Music Catalog
+## 🎵 **Audio Specifications**
 
-The app loads music from a remote JSON catalog with fallback to local tracks:
-- Dynamic loading from cloud sources
-- Automatic retry with exponential backoff
-- Local fallback catalog for offline testing
-- Support for album artwork URLs
+- **Supported Formats**: WAV, FLAC, MP3
+- **Quality**: Up to 96kHz/24-bit (studio quality)
+- **Metadata**: ID3 tags with professional credits
+- **Playback**: Gapless, crossfade support
 
-## 🔧 Configuration
+---
 
-### **Android Auto Setup**
-The app includes proper Android Auto configuration:
-- `automotive_app_desc.xml` - Android Auto app descriptor
-- `allowed_media_browser_callers.xml` - Security for media browsing
-- Manifest declarations for Android Auto support
+## 📊 **Business Benefits**
 
-### **CarPlay Setup (iOS)**
-The iOS app includes proper CarPlay configuration:
-- `Info.plist` - CarPlay capability declarations
-- `CarPlaySceneDelegate.swift` - CarPlay scene management
-- Audio session setup for vehicle integration
-- MPNowPlayingInfoCenter integration
+### **For Mixing Engineers**
+- **New Revenue Stream**: $500-3000 per client app
+- **Professional Branding**: Showcase your mixing work
+- **Client Retention**: Ongoing app maintenance contracts
+- **Portfolio Enhancement**: Tech-forward service offering
 
-### **Media Session Integration**
-- **Android**: Full Media3 MediaSession implementation
-- **iOS**: MPNowPlayingInfoCenter and remote command handling
-- Proper metadata handling for Now Playing display
-- Synchronized playback state across all interfaces
+### **For Artists**
+- **Direct Fan Connection**: No streaming platform intermediaries
+- **Professional Presentation**: Custom-branded music experience
+- **Complete Control**: Own their music distribution
+- **Enhanced Engagement**: Video artwork, liner notes, behind-the-scenes content
 
-## 📖 Documentation
+---
 
-- [Android Auto Integration Guide](docs/android-auto-integration.md)
-- [Service Architecture](docs/service-architecture.md)  
-- [Original UAMP Documentation](docs/FullGuide.md)
+## 🛠️ **Development**
 
-## 🐛 Known Issues
+### **Requirements**
+- Android Studio Hedgehog+ (2023.1.1+)
+- Kotlin 1.9.10+
+- Gradle 8.2+
+- Python 3.8+ (for build scripts)
 
-### **Android**
-- Shuffle and repeat buttons may not appear in some Android Auto implementations
-- Album art loading may be slow on poor network connections
-- Some vehicles may have limited Android Auto UI capabilities
+### **Build Process**
+```bash
+# Clean build
+./gradlew clean
 
-### **iOS**
-- CarPlay may require specific iOS version compatibility
-- Some vehicles may have limited CarPlay capabilities
-- Background audio requires proper iOS permissions setup
+# Debug build
+./gradlew assembleDebug
 
-## 🤝 Contributing
-
-This project is based on Google's UAMP sample with significant enhancements for Android Auto integration. Contributions welcome!
-
-## 📄 License
-
-Based on Google's Universal Android Music Player sample:
-
-```
-Copyright 2017 Google Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+# Release build (for client delivery)
+./gradlew assembleRelease
 ```
 
-## 🎵 Music Credits
+### **Testing**
+- **Device Testing**: Real Android devices recommended
+- **Android Auto**: Test with compatible vehicle or Android Auto simulator
+- **Audio Quality**: Use high-quality headphones/speakers for testing
 
-Music provided by the [Free Music Archive](http://freemusicarchive.org/):
-- **The Kyoto Connection** - [Wake Up](http://freemusicarchive.org/music/The_Kyoto_Connection/Wake_Up_1957/)
+---
 
-Ambisonic recordings by [Ambisonic Sound Library](https://library.soundfield.com/).
+## 📱 **Platform Support**
+
+| Platform | Status | Features |
+|----------|--------|----------|
+| **Android** | ✅ Complete | Video artwork, Android Auto, bundled audio |
+| **iOS** | 📋 Documented | SwiftUI, CarPlay, AVAudioEngine implementation |
+| **Cross-Platform** | ✅ Ready | Shared business logic, consistent UX |
+
+---
+
+## 🎯 **Target Audience**
+
+### **Primary: Mixing Engineers**
+- Independent audio engineers
+- Studio owners looking to expand services
+- Producers wanting to offer premium delivery
+- Engineers working with independent artists
+
+### **Secondary: Artists & Labels**
+- Independent musicians
+- Small record labels
+- Producers releasing compilation albums
+- Artists wanting direct fan engagement
+
+---
+
+## 📈 **Monetization Strategy**
+
+### **Service Pricing**
+- **Basic App**: $500-800 (single album, standard features)
+- **Premium App**: $1000-2000 (multiple albums, video artwork, custom features)
+- **Enterprise**: $2000-3000+ (label services, multiple artists, ongoing support)
+
+### **Ongoing Revenue**
+- **App Store Management**: $50-100/month
+- **Updates & Maintenance**: $200-500/month
+- **Analytics & Insights**: $100-300/month
+- **Additional Features**: Custom pricing
+
+---
+
+## 🚗 **Android Auto Integration**
+
+### **Features**
+- **Browse Library**: Full music catalog browsing in vehicle
+- **Now Playing**: Track info, album art, and playback controls
+- **Voice Control**: "Play [artist]" and "Play [track]" commands
+- **Safe Driving**: Distraction-optimized interface
+
+### **Testing**
+- **Android Auto Simulator**: Available in Android Studio
+- **Vehicle Testing**: Test in compatible cars (2017+ Mercedes, Ford, etc.)
+- **DHU (Desktop Head Unit)**: Command-line testing tool
+
+---
+
+## 📄 **License**
+
+Apache License 2.0 - See [LICENSE](LICENSE) for details.
+
+---
+
+## 🤝 **Support**
+
+For business inquiries and technical support:
+- **Documentation**: Comprehensive setup guides included
+- **Business Model**: See [BUSINESS_GUIDE.md](BUSINESS_GUIDE.md)
+- **Technical Issues**: Check existing documentation and code comments
+
+---
+
+**Ready to transform your mixing business? Start building premium music apps for your artist clients today.**
