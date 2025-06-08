@@ -85,14 +85,19 @@ class MediaItemFragment : Fragment() {
                 viewModel.playMediaId(clickedItem.mediaId)
             }
             
-            // Add scroll listener to show mini player when scrolling
+            // Add scroll listener to intelligently show/hide mini player
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    handleMiniPlayerVisibility(recyclerView)
+                }
+                
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
                     
-                    // When user starts scrolling, show the mini player if music is playing
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                        showMiniPlayerIfPlaying()
+                    // Also check visibility when scroll state changes
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        handleMiniPlayerVisibility(recyclerView)
                     }
                 }
             })
@@ -126,6 +131,49 @@ class MediaItemFragment : Fragment() {
         
         // Update the adapter to use the new theme colors
         (binding.list.adapter as? MediaItemAdapter)?.updateTheme(theme)
+    }
+
+    private fun handleMiniPlayerVisibility(recyclerView: RecyclerView) {
+        // Get the mini player fragment
+        val activity = activity ?: return
+        val nowPlayingFragment = activity.supportFragmentManager
+            .findFragmentById(R.id.nowPlayingFragment) as? NowPlayingFragment ?: return
+        
+        // Calculate if the content extends past where the mini player would be
+        val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+        
+        // Get the total height of the RecyclerView
+        val recyclerViewHeight = recyclerView.height
+        
+        // Estimate mini player height (typically around 72dp)
+        val miniPlayerHeight = (72 * resources.displayMetrics.density).toInt()
+        
+        // Calculate the available space for content without mini player overlap
+        val availableContentHeight = recyclerViewHeight - miniPlayerHeight
+        
+        // Get the total content height
+        val totalContentHeight = layoutManager.findLastVisibleItemPosition() * getEstimatedItemHeight()
+        
+        // Get current scroll position
+        val scrollY = recyclerView.computeVerticalScrollOffset()
+        
+        // Check if content extends beyond the available space or if user has scrolled significantly
+        val shouldHideMiniPlayer = (totalContentHeight > availableContentHeight) && 
+                                  (scrollY > miniPlayerHeight / 2)
+        
+        if (shouldHideMiniPlayer) {
+            // Only hide if there's actually content that would be obscured
+            // This is a no-op for now since the mini player auto-hides on its own timer
+            // But we could add explicit hiding logic here if needed
+        } else {
+            // Show mini player if music is playing and there's no overlap concern
+            showMiniPlayerIfPlaying()
+        }
+    }
+    
+    private fun getEstimatedItemHeight(): Int {
+        // Estimate the height of each list item (typically around 72dp for music items)
+        return (72 * resources.displayMetrics.density).toInt()
     }
 
     private fun showMiniPlayerIfPlaying() {
