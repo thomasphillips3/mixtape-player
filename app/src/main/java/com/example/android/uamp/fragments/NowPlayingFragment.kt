@@ -75,6 +75,11 @@ class NowPlayingFragment : Fragment() {
     private val controlsHideHandler = Handler(Looper.getMainLooper())
     private var controlsHideRunnable: Runnable? = null
     
+    // Position tracking functionality
+    private val positionHandler = Handler(Looper.getMainLooper())
+    private var positionRunnable: Runnable? = null
+    private var isTrackingPosition = false
+    
     private var isFullScreen: Boolean = false
 
     // Video artwork management
@@ -96,17 +101,18 @@ class NowPlayingFragment : Fragment() {
         // Initialize gesture detector
         setupGestureDetector()
 
-        // Subscribe to the current playing metadata
+        // Subscribe to metadata changes
         viewModel.mediaMetadata.observe(viewLifecycleOwner) { metadata ->
+            android.util.Log.d(TAG, "Metadata observer called: title=${metadata?.title}, duration=${metadata?.duration}")
             updateUI(metadata)
         }
 
-        // Subscribe to the media button resource to update play/pause icon
-        viewModel.mediaButtonRes.observe(viewLifecycleOwner) { resId ->
-            binding.mediaButton.setImageResource(resId)
+        // Subscribe to media button changes
+        viewModel.mediaButtonRes.observe(viewLifecycleOwner) { btnRes ->
+            binding.mediaButton.setImageResource(btnRes)
         }
 
-        // Subscribe to the playback state
+        // Subscribe to playback state
         viewModel.playbackState.observe(viewLifecycleOwner) { state: Int ->
             binding.mediaButton.isEnabled = state != Player.STATE_IDLE
             // Show/hide the fragment based on playback state
@@ -140,6 +146,11 @@ class NowPlayingFragment : Fragment() {
         viewModel.mediaPosition.observe(viewLifecycleOwner) { position ->
             android.util.Log.d(TAG, "Position observer called with position: $position")
             updateSeekBarAndCurrentTime(position)
+        }
+        
+        // Subscribe to media duration for progress tracking
+        viewModel.mediaDuration.observe(viewLifecycleOwner) { duration ->
+            android.util.Log.d(TAG, "Duration observer called with duration: $duration")
         }
 
         // Show/hide collapse button based on mode
@@ -184,16 +195,22 @@ class NowPlayingFragment : Fragment() {
         binding.seekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
+                    android.util.Log.d(TAG, "Seek bar changed by user: progress=$progress")
                     onUserInteraction()
-                    viewModel.seekTo(progress.toLong())
+                    // Convert progress to milliseconds and seek
+                    val seekPosition = progress.toLong()
+                    android.util.Log.d(TAG, "Seeking to position: ${seekPosition}ms")
+                    viewModel.seekTo(seekPosition)
                 }
             }
 
             override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {
+                android.util.Log.d(TAG, "User started dragging seek bar")
                 onUserInteraction()
             }
             
             override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
+                android.util.Log.d(TAG, "User stopped dragging seek bar")
                 // Reset controls timer when user finishes seeking
                 if (isFullScreen) {
                     resetControlsHideTimer()
@@ -971,8 +988,11 @@ class NowPlayingFragment : Fragment() {
         // Debug logging
         android.util.Log.d(TAG, "updateSeekBarAndCurrentTime: position=$position")
         
-        // Get the total duration from the current metadata
-        val totalDuration = viewModel.mediaMetadata.value?.let { metadata ->
+        // Get the total duration - try multiple approaches
+        val totalDuration = viewModel.mediaDuration.value?.let { duration ->
+            android.util.Log.d(TAG, "Got duration from ViewModel: ${duration}ms")
+            duration
+        } ?: viewModel.mediaMetadata.value?.let { metadata ->
             // Parse duration from the metadata duration string (format: "X:XX")
             val durationStr = metadata.duration
             android.util.Log.d(TAG, "Duration string: $durationStr")
@@ -1006,6 +1026,48 @@ class NowPlayingFragment : Fragment() {
             binding.duration.text = timeText
             android.util.Log.d(TAG, "Updated time display: $timeText")
         }
+        
+        // Start manual position tracking if not already running and music is playing
+        if (!isTrackingPosition && viewModel.playbackState.value == Player.STATE_READY && position > 0) {
+            startPositionTracking()
+        }
+    }
+    
+    private fun startPositionTracking() {
+        if (isTrackingPosition) return
+        isTrackingPosition = true
+        
+        android.util.Log.d(TAG, "Starting manual position tracking")
+        
+        positionRunnable = object : Runnable {
+            override fun run() {
+                if (_binding == null || !isTrackingPosition) return
+                
+                // Get current position and update manually
+                val currentPos = viewModel.mediaPosition.value ?: 0L
+                if (currentPos > 0) {
+                    updateSeekBarAndCurrentTime(currentPos)
+                }
+                
+                // Continue tracking if still playing
+                if (viewModel.playbackState.value == Player.STATE_READY) {
+                    positionHandler.postDelayed(this, 1000) // Update every second
+                } else {
+                    isTrackingPosition = false
+                }
+            }
+        }
+        
+        positionHandler.postDelayed(positionRunnable!!, 1000)
+    }
+    
+    private fun stopPositionTracking() {
+        isTrackingPosition = false
+        positionRunnable?.let {
+            positionHandler.removeCallbacks(it)
+            positionRunnable = null
+        }
+        android.util.Log.d(TAG, "Stopped manual position tracking")
     }
 
     companion object {
