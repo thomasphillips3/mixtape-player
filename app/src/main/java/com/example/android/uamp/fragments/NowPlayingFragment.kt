@@ -183,23 +183,24 @@ class NowPlayingFragment : Fragment() {
 
         binding.seekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    android.util.Log.d(TAG, "Seek bar changed by user: progress=$progress")
+                if (fromUser && seekBar != null) {
                     onUserInteraction()
-                    // Convert progress to milliseconds and seek
-                    val seekPosition = progress.toLong()
-                    android.util.Log.d(TAG, "Seeking to position: ${seekPosition}ms")
-                    viewModel.seekTo(seekPosition)
+                    
+                    // Get the total duration to calculate the actual seek position
+                    val totalDuration = viewModel.mediaDuration.value ?: 0L
+                    if (totalDuration > 0) {
+                        // Calculate seek position based on progress percentage
+                        val seekPosition = (progress.toFloat() / seekBar.max.toFloat() * totalDuration).toLong()
+                        viewModel.seekTo(seekPosition)
+                    }
                 }
             }
 
             override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {
-                android.util.Log.d(TAG, "User started dragging seek bar")
                 onUserInteraction()
             }
             
             override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
-                android.util.Log.d(TAG, "User stopped dragging seek bar")
                 // Reset controls timer when user finishes seeking
                 if (isFullScreen) {
                     resetControlsHideTimer()
@@ -978,35 +979,31 @@ class NowPlayingFragment : Fragment() {
         // Check if fragment is still valid before accessing binding
         if (_binding == null) return
         
-        // Debug logging
-        android.util.Log.d(TAG, "updateSeekBarAndCurrentTime: position=$position")
-        
         // Get the total duration - try multiple approaches
         val totalDuration = viewModel.mediaDuration.value?.let { duration ->
-            android.util.Log.d(TAG, "Got duration from ViewModel: ${duration}ms")
             duration
         } ?: viewModel.mediaMetadata.value?.let { metadata ->
             // Parse duration from the metadata duration string (format: "X:XX")
             val durationStr = metadata.duration
-            android.util.Log.d(TAG, "Duration string: $durationStr")
             val parts = durationStr.split(":")
             if (parts.size == 2) {
                 val minutes = parts[0].toIntOrNull() ?: 0
                 val seconds = parts[1].toIntOrNull() ?: 0
                 val durationMs = (minutes * 60 + seconds) * 1000L
-                android.util.Log.d(TAG, "Parsed duration: ${durationMs}ms (${minutes}:${seconds})")
                 durationMs
             } else {
-                android.util.Log.w(TAG, "Invalid duration format: $durationStr")
                 0L
             }
         } ?: 0L
         
         if (totalDuration > 0 && position >= 0) {
-            // Update seek bar progress (position and max both in milliseconds)
-            binding.seekBar.max = totalDuration.toInt()
-            binding.seekBar.progress = position.toInt()
-            android.util.Log.d(TAG, "Updated seek bar: max=${totalDuration.toInt()}, progress=${position.toInt()}")
+            // Use a fixed max value for the seek bar (10000 for good precision)
+            val seekBarMax = 10000
+            binding.seekBar.max = seekBarMax
+            
+            // Calculate progress as a percentage of total duration
+            val progressPercent = (position.toFloat() / totalDuration.toFloat() * seekBarMax).toInt()
+            binding.seekBar.progress = progressPercent
         }
         
         // Update current time display 
@@ -1017,7 +1014,6 @@ class NowPlayingFragment : Fragment() {
         if (totalDuration > 0) {
             val timeText = "$currentTimeText / $totalTimeText"
             binding.duration.text = timeText
-            android.util.Log.d(TAG, "Updated time display: $timeText")
         }
     }
     
@@ -1025,15 +1021,12 @@ class NowPlayingFragment : Fragment() {
         if (isTrackingPosition) return
         isTrackingPosition = true
         
-        android.util.Log.d(TAG, "Starting manual position tracking")
-        
         positionRunnable = object : Runnable {
             override fun run() {
                 if (_binding == null || !isTrackingPosition) return
                 
                 // Get current position directly from ViewModel without observing
                 val currentPos = viewModel.mediaPosition.value ?: 0L
-                android.util.Log.d(TAG, "Manual position update: $currentPos")
                 if (currentPos >= 0) {
                     updateSeekBarAndCurrentTime(currentPos)
                 }
@@ -1056,7 +1049,6 @@ class NowPlayingFragment : Fragment() {
             positionHandler.removeCallbacks(it)
             positionRunnable = null
         }
-        android.util.Log.d(TAG, "Stopped manual position tracking")
     }
 
     companion object {

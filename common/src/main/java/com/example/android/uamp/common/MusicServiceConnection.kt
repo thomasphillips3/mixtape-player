@@ -88,6 +88,16 @@ class MusicServiceConnection(
             Log.d(TAG, "onPlaybackStateChanged: $state")
             playbackState.postValue(state)
             
+            // Update position and duration when playback state changes
+            this@MusicServiceConnection.updatePositionAndDuration()
+            
+            // Start/stop position tracking based on state
+            if (state == Player.STATE_READY || state == Player.STATE_BUFFERING) {
+                this@MusicServiceConnection.startPositionTracking()
+            } else {
+                this@MusicServiceConnection.stopPositionTracking()
+            }
+            
             // Also check and update current media item when playback state changes
             updateCurrentMediaMetadata()
         }
@@ -95,6 +105,9 @@ class MusicServiceConnection(
         override fun onIsPlayingChanged(playing: Boolean) {
             Log.d(TAG, "onIsPlayingChanged: $playing")
             isPlaying.postValue(playing)
+            
+            // Update position and duration when playing state changes
+            this@MusicServiceConnection.updatePositionAndDuration()
             
             // Update metadata when playing state changes
             updateCurrentMediaMetadata()
@@ -104,7 +117,16 @@ class MusicServiceConnection(
             Log.d(TAG, "onMediaItemTransition: ${mediaItem?.mediaMetadata?.title}, reason: $reason")
             mediaItem?.mediaMetadata?.let { metadata ->
                 nowPlaying.postValue(metadata)
+                
+                // Update duration when media item changes
+                this@MusicServiceConnection.updatePositionAndDuration()
             }
+        }
+        
+        override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+            Log.d(TAG, "onPositionDiscontinuity: oldPos=${oldPosition.positionMs}, newPos=${newPosition.positionMs}, reason=$reason")
+            // Update position immediately when seeking occurs
+            currentPosition.postValue(newPosition.positionMs)
         }
         
         override fun onRepeatModeChanged(repeatMode: Int) {
@@ -131,6 +153,11 @@ class MusicServiceConnection(
 
     private val subscriptions = mutableMapOf<String, (List<MediaItem>) -> Unit>()
 
+    // Position tracking
+    private val positionHandler = Handler(Looper.getMainLooper())
+    private var positionUpdateRunnable: Runnable? = null
+    private var isTrackingPosition = false
+
     init {
         mediaBrowserFuture.addListener({
             try {
@@ -155,11 +182,75 @@ class MusicServiceConnection(
                 // Get current shuffle state
                 val currentShuffle = mediaBrowserInstance?.shuffleModeEnabled ?: false
                 shuffleMode.postValue(currentShuffle)
+                
+                // Initialize position and duration
+                updatePositionAndDuration()
+                
+                // Start position tracking
+                startPositionTracking()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to connect MediaBrowser: ${e.message}")
                 isConnected.postValue(false)
             }
         }, MoreExecutors.directExecutor())
+    }
+
+    /**
+     * Clean up resources
+     */
+    fun cleanup() {
+        stopPositionTracking()
+        mediaBrowserInstance?.removeListener(mediaBrowserCallback)
+    }
+
+    private fun startPositionTracking() {
+        if (isTrackingPosition) return
+        isTrackingPosition = true
+        
+        positionUpdateRunnable = object : Runnable {
+            override fun run() {
+                val browser = getMediaBrowser()
+                if (browser != null && isTrackingPosition) {
+                    // Update position
+                    val currentPos = browser.currentPosition
+                    currentPosition.postValue(currentPos)
+                    
+                    // Continue tracking
+                    positionHandler.postDelayed(this, 1000) // Update every second
+                }
+            }
+        }
+        
+        positionHandler.postDelayed(positionUpdateRunnable!!, 1000)
+    }
+    
+    private fun stopPositionTracking() {
+        isTrackingPosition = false
+        positionUpdateRunnable?.let {
+            positionHandler.removeCallbacks(it)
+        }
+    }
+
+    private fun updatePositionAndDuration() {
+        val browser = getMediaBrowser()
+        if (browser != null) {
+            // Update current position
+            val currentPos = browser.currentPosition
+            currentPosition.postValue(currentPos)
+            
+            // Update duration
+            val currentDuration = browser.duration
+            if (currentDuration != androidx.media3.common.C.TIME_UNSET) {
+                duration.postValue(currentDuration)
+            } else {
+                // Duration not available yet, try to get it from metadata
+                val metadata = browser.currentMediaItem?.mediaMetadata
+                val metadataDuration = metadata?.extras?.getLong("duration") ?: 0L
+                if (metadataDuration > 0) {
+                    duration.postValue(metadataDuration)
+                }
+            }
+        }
     }
 
     private fun getMediaBrowser(): MediaBrowser? {
@@ -256,7 +347,13 @@ class MusicServiceConnection(
      */
     fun seekTo(position: Long) {
         if (isConnected.value == true) {
-            getMediaBrowser()?.seekTo(position)
+            val browser = getMediaBrowser()
+            if (browser != null) {
+                browser.seekTo(position)
+                
+                // Immediately update our position to reflect the seek (will be corrected by player events)
+                currentPosition.postValue(position)
+            }
         }
     }
 
