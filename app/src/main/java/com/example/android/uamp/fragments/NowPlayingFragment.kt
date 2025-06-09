@@ -138,6 +138,7 @@ class NowPlayingFragment : Fragment() {
 
         // Subscribe to playback position for progress tracking
         viewModel.mediaPosition.observe(viewLifecycleOwner) { position ->
+            android.util.Log.d(TAG, "Position observer called with position: $position")
             updateSeekBarAndCurrentTime(position)
         }
 
@@ -967,24 +968,32 @@ class NowPlayingFragment : Fragment() {
         // Check if fragment is still valid before accessing binding
         if (_binding == null) return
         
+        // Debug logging
+        android.util.Log.d(TAG, "updateSeekBarAndCurrentTime: position=$position")
+        
         // Get the total duration from the current metadata
         val totalDuration = viewModel.mediaMetadata.value?.let { metadata ->
             // Parse duration from the metadata duration string (format: "X:XX")
             val durationStr = metadata.duration
+            android.util.Log.d(TAG, "Duration string: $durationStr")
             val parts = durationStr.split(":")
             if (parts.size == 2) {
                 val minutes = parts[0].toIntOrNull() ?: 0
                 val seconds = parts[1].toIntOrNull() ?: 0
-                (minutes * 60 + seconds) * 1000L // Convert to milliseconds
+                val durationMs = (minutes * 60 + seconds) * 1000L
+                android.util.Log.d(TAG, "Parsed duration: ${durationMs}ms (${minutes}:${seconds})")
+                durationMs
             } else {
+                android.util.Log.w(TAG, "Invalid duration format: $durationStr")
                 0L
             }
         } ?: 0L
         
-        if (totalDuration > 0) {
+        if (totalDuration > 0 && position >= 0) {
             // Update seek bar progress (position and max both in milliseconds)
             binding.seekBar.max = totalDuration.toInt()
             binding.seekBar.progress = position.toInt()
+            android.util.Log.d(TAG, "Updated seek bar: max=${totalDuration.toInt()}, progress=${position.toInt()}")
         }
         
         // Update current time display 
@@ -993,7 +1002,9 @@ class NowPlayingFragment : Fragment() {
         
         // Show current time / total time format
         if (totalDuration > 0) {
-            binding.duration.text = "$currentTimeText / $totalTimeText"
+            val timeText = "$currentTimeText / $totalTimeText"
+            binding.duration.text = timeText
+            android.util.Log.d(TAG, "Updated time display: $timeText")
         }
     }
 

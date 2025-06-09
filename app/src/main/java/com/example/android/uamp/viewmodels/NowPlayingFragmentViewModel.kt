@@ -75,6 +75,7 @@ class NowPlayingFragmentViewModel(
     val mediaButtonRes: LiveData<Int> = _mediaButtonRes
 
     val mediaPosition: LiveData<Long> = musicServiceConnection.currentPosition
+    val mediaDuration: LiveData<Long> = musicServiceConnection.duration
 
     val mediaMetadataText: LiveData<String> = musicServiceConnection.nowPlaying.map { metadata ->
         metadata?.title?.toString() ?: ""
@@ -104,7 +105,7 @@ class NowPlayingFragmentViewModel(
         musicServiceConnection.nowPlaying.observeForever(mediaMetadataObserver)
         musicServiceConnection.isPlaying.observeForever(isPlayingObserver)
         
-        // Start position checking
+        // Start position checking immediately
         checkPlaybackPosition()
     }
 
