@@ -142,17 +142,6 @@ class NowPlayingFragment : Fragment() {
             updateShuffleButton(shuffleEnabled)
         }
 
-        // Subscribe to playback position for progress tracking
-        viewModel.mediaPosition.observe(viewLifecycleOwner) { position ->
-            android.util.Log.d(TAG, "Position observer called with position: $position")
-            updateSeekBarAndCurrentTime(position)
-        }
-        
-        // Subscribe to media duration for progress tracking
-        viewModel.mediaDuration.observe(viewLifecycleOwner) { duration ->
-            android.util.Log.d(TAG, "Duration observer called with duration: $duration")
-        }
-
         // Show/hide collapse button based on mode
         binding.collapseButton.visibility = if (isFullScreen) View.VISIBLE else View.GONE
 
@@ -239,6 +228,9 @@ class NowPlayingFragment : Fragment() {
                 }
             }, 1000) // 1 second delay to let user see controls initially
         }
+
+        // Start manual position tracking timer instead of observing LiveData to avoid conflicts
+        startPositionTracking()
     }
 
     override fun onResume() {
@@ -277,6 +269,7 @@ class NowPlayingFragment : Fragment() {
         stopVideo()
         cancelAutoHideTimer()
         cancelControlsHideTimer()
+        stopPositionTracking()
         _binding = null
     }
 
@@ -1026,11 +1019,6 @@ class NowPlayingFragment : Fragment() {
             binding.duration.text = timeText
             android.util.Log.d(TAG, "Updated time display: $timeText")
         }
-        
-        // Start manual position tracking if not already running and music is playing
-        if (!isTrackingPosition && viewModel.playbackState.value == Player.STATE_READY && position > 0) {
-            startPositionTracking()
-        }
     }
     
     private fun startPositionTracking() {
@@ -1043,14 +1031,15 @@ class NowPlayingFragment : Fragment() {
             override fun run() {
                 if (_binding == null || !isTrackingPosition) return
                 
-                // Get current position and update manually
+                // Get current position directly from ViewModel without observing
                 val currentPos = viewModel.mediaPosition.value ?: 0L
-                if (currentPos > 0) {
+                android.util.Log.d(TAG, "Manual position update: $currentPos")
+                if (currentPos >= 0) {
                     updateSeekBarAndCurrentTime(currentPos)
                 }
                 
                 // Continue tracking if still playing
-                if (viewModel.playbackState.value == Player.STATE_READY) {
+                if (viewModel.playbackState.value == Player.STATE_READY && isTrackingPosition) {
                     positionHandler.postDelayed(this, 1000) // Update every second
                 } else {
                     isTrackingPosition = false
