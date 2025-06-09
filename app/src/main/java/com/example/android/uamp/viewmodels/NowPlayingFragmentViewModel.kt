@@ -103,6 +103,9 @@ class NowPlayingFragmentViewModel(
         musicServiceConnection.playbackState.observeForever(playbackStateObserver)
         musicServiceConnection.nowPlaying.observeForever(mediaMetadataObserver)
         musicServiceConnection.isPlaying.observeForever(isPlayingObserver)
+        
+        // Start position checking
+        checkPlaybackPosition()
     }
 
     /**
@@ -213,6 +216,11 @@ class NowPlayingFragmentViewModel(
     private fun updateState(state: Int?) {
         // Update the media button when playback state changes
         updatePlayPauseButton()
+        
+        // Start position checking when playback starts
+        if (state == Player.STATE_READY && updatePosition) {
+            checkPlaybackPosition()
+        }
     }
 
     private fun updatePlayPauseButton() {

@@ -54,6 +54,10 @@ class NowPlayingFragment : Fragment() {
         InjectorUtils.provideNowPlayingFragmentViewModel(requireContext())
     }
 
+    private val musicServiceConnection by lazy {
+        InjectorUtils.provideMusicServiceConnection(requireContext())
+    }
+
     private val mainActivityViewModel by lazy {
         (activity as? MainActivity)?.viewModel
     }
@@ -130,6 +134,11 @@ class NowPlayingFragment : Fragment() {
         // Subscribe to shuffle mode changes
         viewModel.shuffleMode.observe(viewLifecycleOwner) { shuffleEnabled ->
             updateShuffleButton(shuffleEnabled)
+        }
+
+        // Subscribe to playback position for progress tracking
+        viewModel.mediaPosition.observe(viewLifecycleOwner) { position ->
+            updateSeekBarAndCurrentTime(position)
         }
 
         // Show/hide collapse button based on mode
@@ -973,9 +982,9 @@ class NowPlayingFragment : Fragment() {
         } ?: 0L
         
         if (totalDuration > 0) {
-            // Update seek bar progress (seek bar max should be duration in seconds)
-            binding.seekBar.max = (totalDuration / 1000).toInt()
-            binding.seekBar.progress = (position / 1000).toInt()
+            // Update seek bar progress (position and max both in milliseconds)
+            binding.seekBar.max = totalDuration.toInt()
+            binding.seekBar.progress = position.toInt()
         }
         
         // Update current time display 
@@ -983,11 +992,8 @@ class NowPlayingFragment : Fragment() {
         val totalTimeText = NowPlayingFragmentViewModel.NowPlayingMetadata.timestampToMSS(totalDuration)
         
         // Show current time / total time format
-        if (position > 0 && totalDuration > 0) {
+        if (totalDuration > 0) {
             binding.duration.text = "$currentTimeText / $totalTimeText"
-        } else if (totalDuration > 0) {
-            // Show just total duration if position is 0
-            binding.duration.text = "0:00 / $totalTimeText"
         }
     }
 

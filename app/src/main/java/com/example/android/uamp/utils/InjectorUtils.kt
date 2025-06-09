@@ -31,7 +31,7 @@ import com.example.android.uamp.viewmodels.NowPlayingFragmentViewModel
 object InjectorUtils {
     private var musicServiceConnection: MusicServiceConnection? = null
 
-    private fun provideMusicServiceConnection(context: Context): MusicServiceConnection {
+    fun provideMusicServiceConnection(context: Context): MusicServiceConnection {
         if (musicServiceConnection == null) {
             musicServiceConnection = MusicServiceConnection(
                 context,
