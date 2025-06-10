@@ -126,8 +126,8 @@ class MainActivity : AppCompatActivity() {
                     .replace(R.id.mediaItemFragment, fragment)
                     .commit()
                 
-                // Auto-play the first track when app launches (with delay)
-                autoPlayFirstTrack()
+                // Set default playback modes without auto-playing
+                setupDefaultPlaybackModes()
             } else {
                 Log.d(TAG, "Fragment already exists")
             }
@@ -136,45 +136,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun autoPlayFirstTrack() {
-        Log.d(TAG, "Auto-playing first track...")
+    private fun setupDefaultPlaybackModes() {
+        Log.d(TAG, "Setting up default playback modes...")
         
         // Set default playback modes: repeat all, shuffle off
         viewModel.musicServiceConnection.setRepeatMode(androidx.media3.common.Player.REPEAT_MODE_ALL)
         viewModel.musicServiceConnection.setShuffleMode(false)
         
-        // Add a delay to ensure catalog is loaded before subscribing
+        // Preload the catalog without auto-playing
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            Log.d(TAG, "Attempting to subscribe to catalog after delay")
+            Log.d(TAG, "Preloading catalog...")
             viewModel.musicServiceConnection.subscribe("/") { mediaItems ->
-                Log.d(TAG, "Received ${mediaItems.size} media items in auto-play callback")
-                if (mediaItems.isNotEmpty()) {
-                    val firstTrack = mediaItems[0]
-                    Log.d(TAG, "Auto-playing first track: ${firstTrack.mediaMetadata.title}")
-                    viewModel.musicServiceConnection.playMedia(firstTrack.mediaId)
-                } else {
-                    Log.w(TAG, "No tracks available for auto-play, retrying...")
-                    // Retry one more time after additional delay
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        retryAutoPlay()
-                    }, 2000)
-                }
+                Log.d(TAG, "Catalog preloaded with ${mediaItems.size} media items")
+                // Don't auto-play, just log that catalog is ready
             }
-        }, 2000) // 2 second delay to ensure catalog loading is complete
-    }
-
-    private fun retryAutoPlay() {
-        Log.d(TAG, "Retrying auto-play...")
-        viewModel.musicServiceConnection.subscribe("/") { mediaItems ->
-            Log.d(TAG, "Retry: Received ${mediaItems.size} media items")
-            if (mediaItems.isNotEmpty()) {
-                val firstTrack = mediaItems[0]
-                Log.d(TAG, "Auto-playing first track (retry): ${firstTrack.mediaMetadata.title}")
-                viewModel.musicServiceConnection.playMedia(firstTrack.mediaId)
-            } else {
-                Log.w(TAG, "Still no tracks available after retry")
-            }
-        }
+        }, 1000) // 1 second delay to ensure catalog loading
     }
 }
 

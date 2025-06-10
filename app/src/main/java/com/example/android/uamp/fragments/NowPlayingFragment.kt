@@ -484,6 +484,9 @@ class NowPlayingFragment : Fragment() {
     }
 
     private fun loadArtwork(metadata: NowPlayingFragmentViewModel.NowPlayingMetadata) {
+        // Stop any existing video before loading new artwork
+        stopVideo()
+        
         // Get artwork type from metadata extras
         val artworkType = getArtworkTypeFromMetadata()
         val videoUri = getVideoUriFromMetadata()
@@ -511,17 +514,19 @@ class NowPlayingFragment : Fragment() {
         binding.albumArt.visibility = View.GONE
         binding.darkOverlay.visibility = View.VISIBLE // Add overlay for better text readability
         
-        // Setup video
-        setupVideoView(binding.backgroundVideo, videoUri)
-        
-        // Load thumbnail for palette extraction
+        // Load thumbnail for palette extraction first
         loadThumbnailForPalette(thumbnailUri)
+        
+        // Delay video setup to ensure music playback is established first
+        Handler(Looper.getMainLooper()).postDelayed({
+            setupVideoView(binding.backgroundVideo, videoUri)
+        }, 500) // 500ms delay to let music start first
     }
 
     private fun loadImageArtwork(imageUri: Uri) {
         isVideoArtwork = false
         
-        // Stop any existing video
+        // Stop any existing video first
         stopVideo()
         
         // Show image view, hide video view
@@ -581,18 +586,32 @@ class NowPlayingFragment : Fragment() {
             
             // Set up prepared listener
             videoView.setOnPreparedListener { mediaPlayer ->
-                // Mute the video (background videos should be silent)
-                mediaPlayer.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                mediaPlayer.isLooping = true
-                
                 try {
-                    mediaPlayer.setVolume(0f, 0f) // Mute audio
+                    // Configure video for background playback without interfering with music
+                    mediaPlayer.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+                    mediaPlayer.isLooping = true
+                    
+                    // Critical: Mute the video audio completely to prevent interference
+                    mediaPlayer.setVolume(0f, 0f)
+                    
+                    // Set audio session ID to isolate from main music playback
+                    try {
+                        // Use a separate audio session to avoid conflicts
+                        val audioManager = requireContext().getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+                        val audioSessionId = audioManager.generateAudioSessionId()
+                        mediaPlayer.audioSessionId = audioSessionId
+                    } catch (e: Exception) {
+                        android.util.Log.w(TAG, "Could not set separate audio session for video", e)
+                    }
+                    
+                    // Start video playback
+                    videoView.start()
+                    android.util.Log.d(TAG, "Video started successfully")
+                    
                 } catch (e: Exception) {
-                    android.util.Log.w(TAG, "Failed to mute video", e)
+                    android.util.Log.e(TAG, "Error configuring video player", e)
+                    fallbackToImageArtwork()
                 }
-                
-                // Start playback
-                videoView.start()
             }
             
             // Set up error listener
@@ -601,6 +620,22 @@ class NowPlayingFragment : Fragment() {
                 // Fallback to image artwork
                 fallbackToImageArtwork()
                 true // Error handled
+            }
+            
+            // Set up info listener to track video events
+            videoView.setOnInfoListener { _, what, extra ->
+                when (what) {
+                    MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START -> {
+                        android.util.Log.d(TAG, "Video rendering started")
+                    }
+                    MediaPlayer.MEDIA_INFO_BUFFERING_START -> {
+                        android.util.Log.d(TAG, "Video buffering started")
+                    }
+                    MediaPlayer.MEDIA_INFO_BUFFERING_END -> {
+                        android.util.Log.d(TAG, "Video buffering ended")
+                    }
+                }
+                false // Don't consume the info event
             }
             
         } catch (e: Exception) {
@@ -642,16 +677,34 @@ class NowPlayingFragment : Fragment() {
     private fun stopVideo() {
         currentVideoView?.let { videoView ->
             try {
+                android.util.Log.d(TAG, "Stopping video playback")
+                
+                // Stop playback if it's playing
                 if (videoView.isPlaying) {
                     videoView.stopPlayback()
-                } else {
-                    // Video is not playing, no action needed
                 }
+                
+                // Clear the video view
+                videoView.suspend()
+                
+                // Hide the video view
+                videoView.visibility = View.GONE
+                
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Error stopping video", e)
             }
         }
         currentVideoView = null
+        isVideoArtwork = false
+        
+        // Ensure video view is hidden and image view is visible
+        if (_binding != null) {
+            binding.backgroundVideo.visibility = View.GONE
+            binding.albumArt.visibility = View.VISIBLE
+            binding.darkOverlay.visibility = View.GONE
+        }
+        
+        android.util.Log.d(TAG, "Video cleanup completed")
     }
 
     private fun getArtworkTypeFromMetadata(): String? {
