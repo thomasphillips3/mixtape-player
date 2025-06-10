@@ -20,6 +20,31 @@ plugins {
     id 'kotlin-kapt'
 }
 
+// Add task to create music videos before build
+task createMusicVideos(type: Exec) {
+    description = "Create music videos by combining video artwork with lossless audio"
+    group = "build setup"
+    
+    workingDir rootProject.projectDir
+    commandLine 'python3', 'scripts/create-music-videos.py'
+    
+    // Define inputs and outputs for Gradle caching
+    inputs.dir("${rootProject.projectDir}/assets/artwork")
+    inputs.dir("${rootProject.projectDir}/assets/audio")
+    outputs.dir("${rootProject.projectDir}/generated/music-videos")
+    
+    doFirst {
+        println "🎬 Creating music videos with lossless audio..."
+    }
+    
+    doLast {
+        println "✅ Music video creation completed"
+    }
+}
+
+// Ensure music videos are created before processing assets
+preBuild.dependsOn createMusicVideos
+
 android {
     compileSdk 34
     namespace "com.example.android.uamp"

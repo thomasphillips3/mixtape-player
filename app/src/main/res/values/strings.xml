@@ -15,7 +15,11 @@
   ~ limitations under the License.
   -->
 <resources>
-    <string name="app_name">Mixtape</string>
+    <string name="app_name">Time Off 3</string>
+    <string name="artist_name">Thomas Phillips</string>
+    <string name="album_name">Time Off 3</string>
+    <string name="record_label">Bombest</string>
+    <string name="company_website">www.bom.best</string>
 
     <string name="skip_back_10s">Skip back 10s</string>
     <string name="skip_forward_10s">Skip forward 10s</string>
@@ -43,4 +47,22 @@
     <string name="automotive_loading">Loading music...</string>
     <string name="automotive_error_network">Network error. Please check your connection.</string>
     <string name="automotive_error_generic">Something went wrong. Please try again.</string>
+
+    <!-- Default values -->
+    <string name="unknown_title">Unknown Title</string>
+    <string name="unknown_artist">Unknown Artist</string>
+    
+    <!-- Video playback -->
+    <string name="video_playback_error">Video playback error</string>
+    <string name="asset_not_found">Video asset not found</string>
+    <string name="video_fallback_message">Switching to image artwork</string>
+    
+    <!-- Track types -->
+    <string name="track_type_audio_only">Audio-only track</string>
+    <string name="track_type_music_video">Music video track</string>
+    
+    <!-- Log messages (for debugging builds) -->
+    <string name="log_video_started">Video started successfully</string>
+    <string name="log_video_error">Video error occurred</string>
+    <string name="log_asset_found">Asset found</string>
 </resources>

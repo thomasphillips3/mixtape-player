@@ -183,8 +183,8 @@ class AutomotiveMainActivity : AppCompatActivity() {
     }
 
     private fun updateNowPlayingDisplay(mediaMetadata: androidx.media3.common.MediaMetadata) {
-        binding.songTitle.text = mediaMetadata.title ?: "Unknown Title"
-        binding.artistName.text = mediaMetadata.artist ?: "Unknown Artist"
+        binding.songTitle.text = mediaMetadata.title ?: getString(R.string.unknown_title)
+        binding.artistName.text = mediaMetadata.artist ?: getString(R.string.unknown_artist)
         
         // Show now playing section
         binding.nowPlayingSection.visibility = View.VISIBLE

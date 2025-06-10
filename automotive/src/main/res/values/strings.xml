@@ -62,4 +62,8 @@
     <string name="automotive_loading">Loading music...</string>
     <string name="automotive_error_network">Network error. Please check your connection.</string>
     <string name="automotive_error_generic">Something went wrong. Please try again.</string>
+    
+    <!-- Default values -->
+    <string name="unknown_title">Unknown Title</string>
+    <string name="unknown_artist">Unknown Artist</string>
 </resources>

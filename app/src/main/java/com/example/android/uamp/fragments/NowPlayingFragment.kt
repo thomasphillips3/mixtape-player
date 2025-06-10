@@ -19,7 +19,6 @@ package com.example.android.uamp.fragments
 import android.animation.ObjectAnimator
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -29,11 +28,13 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.VideoView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -83,7 +84,7 @@ class NowPlayingFragment : Fragment() {
     private var isFullScreen: Boolean = false
 
     // Video artwork management
-    private var currentVideoView: VideoView? = null
+    private var currentVideoView: PlayerView? = null
     private var isVideoArtwork = false
 
     override fun onCreateView(
@@ -103,7 +104,6 @@ class NowPlayingFragment : Fragment() {
 
         // Subscribe to metadata changes
         viewModel.mediaMetadata.observe(viewLifecycleOwner) { metadata ->
-            android.util.Log.d(TAG, "Metadata observer called: title=${metadata?.title}, duration=${metadata?.duration}")
             updateUI(metadata)
         }
 
@@ -118,6 +118,18 @@ class NowPlayingFragment : Fragment() {
             // Show/hide the fragment based on playback state
             val shouldShow = state != Player.STATE_IDLE
             binding.root.visibility = if (shouldShow) View.VISIBLE else View.GONE
+            
+            // Immediately update position when playback state changes to ready
+            if (state == Player.STATE_READY) {
+                // Get current position immediately and update display
+                val currentPos = viewModel.mediaPosition.value ?: 0L
+                updateSeekBarAndCurrentTime(currentPos)
+                
+                // Ensure position tracking is running
+                if (!isTrackingPosition) {
+                    startPositionTracking()
+                }
+            }
             
             // Start auto-hide timer when mini player becomes visible (both contexts)
             if (shouldShow && !isFullScreen) {
@@ -140,6 +152,20 @@ class NowPlayingFragment : Fragment() {
         // Subscribe to shuffle mode changes
         viewModel.shuffleMode.observe(viewLifecycleOwner) { shuffleEnabled ->
             updateShuffleButton(shuffleEnabled)
+        }
+
+        // Subscribe to isPlaying state changes for immediate position updates
+        musicServiceConnection.isPlaying.observe(viewLifecycleOwner) { isPlaying ->
+            if (isPlaying) {
+                // Immediately update position when playback starts
+                val currentPos = viewModel.mediaPosition.value ?: 0L
+                updateSeekBarAndCurrentTime(currentPos)
+                
+                // Ensure position tracking is running
+                if (!isTrackingPosition) {
+                    startPositionTracking()
+                }
+            }
         }
 
         // Show/hide collapse button based on mode
@@ -182,6 +208,8 @@ class NowPlayingFragment : Fragment() {
         }
 
         binding.seekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            private var userSeeking = false
+            
             override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser && seekBar != null) {
                     onUserInteraction()
@@ -191,16 +219,38 @@ class NowPlayingFragment : Fragment() {
                     if (totalDuration > 0) {
                         // Calculate seek position based on progress percentage
                         val seekPosition = (progress.toFloat() / seekBar.max.toFloat() * totalDuration).toLong()
-                        viewModel.seekTo(seekPosition)
+                        
+                        // Update time display immediately while seeking
+                        updateTimeDisplay(seekPosition, totalDuration)
                     }
                 }
             }
 
             override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {
                 onUserInteraction()
+                userSeeking = true
+                // Stop position tracking while user is seeking
+                stopPositionTracking()
             }
             
             override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
+                userSeeking = false
+                
+                if (seekBar != null) {
+                    // Get the total duration to calculate the actual seek position
+                    val totalDuration = viewModel.mediaDuration.value ?: 0L
+                    if (totalDuration > 0) {
+                        // Calculate seek position based on progress percentage
+                        val seekPosition = (seekBar.progress.toFloat() / seekBar.max.toFloat() * totalDuration).toLong()
+                        viewModel.seekTo(seekPosition)
+                    }
+                }
+                
+                // Resume position tracking after seeking
+                Handler(Looper.getMainLooper()).postDelayed({
+                    startPositionTracking()
+                }, 500) // Small delay to let seek complete
+                
                 // Reset controls timer when user finishes seeking
                 if (isFullScreen) {
                     resetControlsHideTimer()
@@ -245,10 +295,15 @@ class NowPlayingFragment : Fragment() {
         // Resume video playback if it was video artwork
         if (isVideoArtwork && currentVideoView != null) {
             try {
-                currentVideoView?.resume()
+                currentVideoView?.player?.play()
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Failed to resume video", e)
             }
+        }
+        
+        // Ensure position tracking is running
+        if (!isTrackingPosition) {
+            startPositionTracking()
         }
     }
 
@@ -257,7 +312,7 @@ class NowPlayingFragment : Fragment() {
         // Pause video playback to save resources
         if (isVideoArtwork && currentVideoView != null) {
             try {
-                currentVideoView?.pause()
+                currentVideoView?.player?.pause()
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Failed to pause video", e)
             }
@@ -478,49 +533,92 @@ class NowPlayingFragment : Fragment() {
                 }, 50) // Small delay for UI update completion
             }
             
-            // Load artwork (video or image) based on metadata
-            loadArtwork(it)
+            // Load artwork based on track type
+            loadArtworkForTrack(it)
         }
     }
 
-    private fun loadArtwork(metadata: NowPlayingFragmentViewModel.NowPlayingMetadata) {
-        // Stop any existing video before loading new artwork
-        stopVideo()
+    private fun loadArtworkForTrack(metadata: NowPlayingFragmentViewModel.NowPlayingMetadata) {
+        // Get track type from metadata extras
+        val trackType = getTrackTypeFromMetadata()
         
-        // Get artwork type from metadata extras
-        val artworkType = getArtworkTypeFromMetadata()
-        val videoUri = getVideoUriFromMetadata()
-        
-        when (artworkType) {
-            "VIDEO" -> {
+        when (trackType) {
+            "MUSIC_VIDEO" -> {
+                // For music videos, load and play the actual video
+                val videoUri = getVideoUriFromMetadata()
+                
                 if (videoUri != null) {
-                    loadVideoArtwork(videoUri, metadata.albumArtUri)
+                    loadVideoArtwork(videoUri)
                 } else {
-                    // Fallback to image if video URI is missing
+                    // Fallback to static artwork if video URI not found
                     loadImageArtwork(metadata.albumArtUri)
                 }
             }
             else -> {
+                // For audio-only tracks, show static artwork
                 loadImageArtwork(metadata.albumArtUri)
             }
         }
     }
 
-    private fun loadVideoArtwork(videoUri: Uri, thumbnailUri: Uri) {
+    private fun getTrackTypeFromMetadata(): String? {
+        return try {
+            // Get raw MediaMetadata from musicServiceConnection to access extras
+            val rawMetadata = musicServiceConnection.nowPlaying.value
+            val extras = rawMetadata?.extras
+            
+            val trackType = extras?.getString("track_type")
+            
+            if (!trackType.isNullOrEmpty()) {
+                trackType
+            } else {
+                "AUDIO_ONLY" // Default fallback
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to get track type", e)
+            "AUDIO_ONLY" // Default fallback
+        }
+    }
+
+    private fun getVideoUriFromMetadata(): Uri? {
+        return try {
+            // Get raw MediaMetadata from musicServiceConnection to access extras
+            val rawMetadata = musicServiceConnection.nowPlaying.value
+            val extras = rawMetadata?.extras
+            
+            val videoPath = extras?.getString("video_path")
+            
+            if (!videoPath.isNullOrEmpty()) {
+                // Create asset URI for the video path (ExoPlayer can handle assets)
+                val filename = videoPath.substringAfterLast("/")
+                val uri = Uri.parse("file:///android_asset/music-videos/$filename")
+                return uri
+            } else {
+                return null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to get video URI", e)
+            null
+        }
+    }
+
+    private fun loadVideoArtwork(videoUri: Uri) {
         isVideoArtwork = true
         
-        // Show video view, hide image view
-        binding.backgroundVideo.visibility = View.VISIBLE
+        // Stop any existing video first
+        stopVideo()
+        
+        // Hide image view, show video view
         binding.albumArt.visibility = View.GONE
-        binding.darkOverlay.visibility = View.VISIBLE // Add overlay for better text readability
+        binding.backgroundVideo.visibility = View.VISIBLE
+        binding.darkOverlay.visibility = View.VISIBLE
         
-        // Load thumbnail for palette extraction first
-        loadThumbnailForPalette(thumbnailUri)
+        // Setup and start video playback
+        setupVideoView(binding.backgroundVideo, videoUri)
         
-        // Delay video setup to ensure music playback is established first
-        Handler(Looper.getMainLooper()).postDelayed({
-            setupVideoView(binding.backgroundVideo, videoUri)
-        }, 500) // 500ms delay to let music start first
+        // Load thumbnail for color palette extraction
+        val metadata = viewModel.mediaMetadata.value
+        metadata?.let { loadThumbnailForPalette(it.albumArtUri) }
     }
 
     private fun loadImageArtwork(imageUri: Uri) {
@@ -569,77 +667,74 @@ class NowPlayingFragment : Fragment() {
             })
     }
 
-    private fun setupVideoView(videoView: VideoView, videoUri: Uri) {
+    private fun setupVideoView(videoView: PlayerView, videoUri: Uri) {
         try {
-            android.util.Log.d(TAG, "Setting up video view with URI: $videoUri")
-            
             currentVideoView = videoView
             
-            // Set video URI (works for both resource and asset URIs)
-            videoView.setVideoURI(videoUri)
-            
-            // Set up completion listener to restart video (looping)
-            videoView.setOnCompletionListener { mediaPlayer ->
-                mediaPlayer.isLooping = true
-                videoView.start()
-            }
-            
-            // Set up prepared listener
-            videoView.setOnPreparedListener { mediaPlayer ->
-                try {
-                    // Configure video for background playback without interfering with music
-                    mediaPlayer.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                    mediaPlayer.isLooping = true
-                    
-                    // Critical: Mute the video audio completely to prevent interference
-                    mediaPlayer.setVolume(0f, 0f)
-                    
-                    // Set audio session ID to isolate from main music playback
-                    try {
-                        // Use a separate audio session to avoid conflicts
-                        val audioManager = requireContext().getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
-                        val audioSessionId = audioManager.generateAudioSessionId()
-                        mediaPlayer.audioSessionId = audioSessionId
-                    } catch (e: Exception) {
-                        android.util.Log.w(TAG, "Could not set separate audio session for video", e)
-                    }
-                    
-                    // Start video playback
-                    videoView.start()
-                    android.util.Log.d(TAG, "Video started successfully")
-                    
-                } catch (e: Exception) {
-                    android.util.Log.e(TAG, "Error configuring video player", e)
-                    fallbackToImageArtwork()
-                }
-            }
-            
-            // Set up error listener
-            videoView.setOnErrorListener { _, what, extra ->
-                android.util.Log.e(TAG, "Video playback error: what=$what, extra=$extra, uri=$videoUri")
-                // Fallback to image artwork
+            // Verify asset exists before setting up video player
+            try {
+                val assetPath = videoUri.path?.removePrefix("/android_asset/")
+                val inputStream = requireContext().assets.open(assetPath!!)
+                inputStream.close()
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, getString(R.string.asset_not_found), e)
                 fallbackToImageArtwork()
-                true // Error handled
+                return
             }
             
-            // Set up info listener to track video events
-            videoView.setOnInfoListener { _, what, extra ->
-                when (what) {
-                    MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START -> {
-                        android.util.Log.d(TAG, "Video rendering started")
-                    }
-                    MediaPlayer.MEDIA_INFO_BUFFERING_START -> {
-                        android.util.Log.d(TAG, "Video buffering started")
-                    }
-                    MediaPlayer.MEDIA_INFO_BUFFERING_END -> {
-                        android.util.Log.d(TAG, "Video buffering ended")
+            // Create ExoPlayer instance for video playback
+            val exoPlayer = ExoPlayer.Builder(requireContext()).build()
+            
+            // Configure ExoPlayer for background video (muted, looping)
+            exoPlayer.volume = 0f // Mute to prevent audio interference
+            exoPlayer.repeatMode = Player.REPEAT_MODE_ONE // Loop video
+            
+            // Set player to PlayerView
+            videoView.player = exoPlayer
+            
+            // Set up player event listener
+            exoPlayer.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    when (playbackState) {
+                        Player.STATE_READY -> {
+                            if (currentVideoView == videoView && _binding != null) {
+                                exoPlayer.play()
+                                videoView.visibility = View.VISIBLE
+                                binding.albumArt.visibility = View.GONE
+                                binding.darkOverlay.visibility = View.VISIBLE
+                            }
+                        }
+                        Player.STATE_ENDED -> {
+                            // Video will restart due to repeat mode
+                        }
+                        Player.STATE_BUFFERING -> {
+                            // Video is buffering
+                        }
+                        Player.STATE_IDLE -> {
+                            // Video is idle
+                        }
                     }
                 }
-                false // Don't consume the info event
-            }
+                
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    android.util.Log.e(TAG, getString(R.string.video_playback_error), error)
+                    Handler(Looper.getMainLooper()).post {
+                        fallbackToImageArtwork()
+                    }
+                }
+            })
+            
+            // Load and prepare the video
+            val mediaItem = MediaItem.fromUri(videoUri)
+            exoPlayer.setMediaItem(mediaItem)
+            exoPlayer.prepare()
+            
+            // Load thumbnail for color palette extraction
+            val metadata = viewModel.mediaMetadata.value
+            metadata?.let { loadThumbnailForPalette(it.albumArtUri) }
             
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Failed to setup video", e)
+            android.util.Log.e(TAG, getString(R.string.video_playback_error), e)
             fallbackToImageArtwork()
         }
     }
@@ -675,25 +770,9 @@ class NowPlayingFragment : Fragment() {
     }
 
     private fun stopVideo() {
-        currentVideoView?.let { videoView ->
-            try {
-                android.util.Log.d(TAG, "Stopping video playback")
-                
-                // Stop playback if it's playing
-                if (videoView.isPlaying) {
-                    videoView.stopPlayback()
-                }
-                
-                // Clear the video view
-                videoView.suspend()
-                
-                // Hide the video view
-                videoView.visibility = View.GONE
-                
-            } catch (e: Exception) {
-                android.util.Log.w(TAG, "Error stopping video", e)
-            }
-        }
+        if (!isVideoArtwork) return // Don't stop if not currently showing video
+        
+        currentVideoView?.player?.release()
         currentVideoView = null
         isVideoArtwork = false
         
@@ -702,89 +781,6 @@ class NowPlayingFragment : Fragment() {
             binding.backgroundVideo.visibility = View.GONE
             binding.albumArt.visibility = View.VISIBLE
             binding.darkOverlay.visibility = View.GONE
-        }
-        
-        android.util.Log.d(TAG, "Video cleanup completed")
-    }
-
-    private fun getArtworkTypeFromMetadata(): String? {
-        return try {
-            // Get raw MediaMetadata from musicServiceConnection to access extras
-            val rawMetadata = musicServiceConnection.nowPlaying.value
-            val artworkType = rawMetadata?.extras?.getString("artwork_type")
-            
-            if (!artworkType.isNullOrEmpty()) {
-                android.util.Log.d(TAG, "Got artwork type from metadata extras: $artworkType")
-                artworkType.uppercase()
-            } else {
-                // Fallback to legacy detection method
-                val metadata = viewModel.mediaMetadata.value
-                metadata?.id?.let { mediaId ->
-                    val trackNumber = extractTrackNumberFromId(mediaId)
-                    if (trackNumber > 0) {
-                        val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
-                        if (hasVideoResource(videoResourceName)) "VIDEO" else "IMAGE"
-                    } else {
-                        "IMAGE"
-                    }
-                } ?: "IMAGE"
-            }
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Failed to get artwork type", e)
-            "IMAGE" // Default fallback
-        }
-    }
-
-    private fun getVideoUriFromMetadata(): Uri? {
-        return try {
-            // Get raw MediaMetadata from musicServiceConnection to access extras
-            val rawMetadata = musicServiceConnection.nowPlaying.value
-            val videoUriString = rawMetadata?.extras?.getString("video_uri")
-            
-            if (!videoUriString.isNullOrEmpty()) {
-                val videoUri = Uri.parse(videoUriString)
-                android.util.Log.d(TAG, "Got video URI from metadata extras: $videoUri")
-                videoUri
-            } else {
-                // Fallback to legacy construction method
-                val metadata = viewModel.mediaMetadata.value
-                val mediaId = metadata?.id
-                if (mediaId != null) {
-                    val trackNumber = extractTrackNumberFromId(mediaId)
-                    if (trackNumber > 0) {
-                        val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
-                        val fallbackUri = Uri.parse("android.resource://${requireContext().packageName}/raw/$videoResourceName")
-                        android.util.Log.d(TAG, "Generated fallback video URI: $fallbackUri")
-                        fallbackUri
-                    } else {
-                        null
-                    }
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Failed to get video URI", e)
-            null
-        }
-    }
-
-    private fun extractTrackNumberFromId(mediaId: String): Int {
-        return try {
-            // Try to extract track number from media ID (assuming format like "track_01" or similar)
-            val match = Regex("(\\d+)").find(mediaId)
-            match?.value?.toInt() ?: 0
-        } catch (e: Exception) {
-            0
-        }
-    }
-
-    private fun hasVideoResource(resourceName: String): Boolean {
-        return try {
-            val resourceId = resources.getIdentifier(resourceName, "raw", requireContext().packageName)
-            resourceId != 0
-        } catch (e: Exception) {
-            false
         }
     }
 
@@ -856,7 +852,7 @@ class NowPlayingFragment : Fragment() {
         applyColorsToUI(whiteColor, whiteColor)
     }
 
-    private fun applyColorsToUI(primaryColor: Int, secondaryColor: Int) {
+    private fun applyColorsToUI(primaryColor: Int, _secondaryColor: Int) {
         // Check if fragment is still valid before accessing binding
         if (_binding == null) return
         
@@ -904,7 +900,7 @@ class NowPlayingFragment : Fragment() {
             parentFragmentManager.popBackStack()
         } else {
             // If no back stack, manually navigate back to the MediaItemFragment
-            activity?.let { mainActivity ->
+            activity?.let { _mainActivity ->
                 // Remove this full-screen fragment from the content view
                 parentFragmentManager.beginTransaction()
                     .remove(this)
@@ -1080,14 +1076,26 @@ class NowPlayingFragment : Fragment() {
             binding.seekBar.progress = progressPercent
         }
         
+        // Update time display based on mode
+        updateTimeDisplay(position, totalDuration)
+    }
+    
+    private fun updateTimeDisplay(position: Long, totalDuration: Long) {
+        // Check if fragment is still valid before accessing binding
+        if (_binding == null) return
+        
         // Update current time display 
         val currentTimeText = NowPlayingFragmentViewModel.NowPlayingMetadata.timestampToMSS(position)
         val totalTimeText = NowPlayingFragmentViewModel.NowPlayingMetadata.timestampToMSS(totalDuration)
         
-        // Show current time / total time format
-        if (totalDuration > 0) {
+        // Show different format based on mode
+        if (isFullScreen && totalDuration > 0) {
+            // Full screen mode: show current time / total time format
             val timeText = "$currentTimeText / $totalTimeText"
             binding.duration.text = timeText
+        } else {
+            // Mini player mode: show only current time
+            binding.duration.text = currentTimeText
         }
     }
     
@@ -1105,16 +1113,20 @@ class NowPlayingFragment : Fragment() {
                     updateSeekBarAndCurrentTime(currentPos)
                 }
                 
-                // Continue tracking if still playing
-                if (viewModel.playbackState.value == Player.STATE_READY && isTrackingPosition) {
-                    positionHandler.postDelayed(this, 1000) // Update every second
-                } else {
-                    isTrackingPosition = false
+                // Continue tracking if still playing and tracking is enabled
+                if (isTrackingPosition && 
+                    (viewModel.playbackState.value == Player.STATE_READY || 
+                     viewModel.playbackState.value == Player.STATE_BUFFERING)) {
+                    positionHandler.postDelayed(this, 250) // Update every 250ms for smoother updates
+                } else if (isTrackingPosition) {
+                    // Restart tracking after a brief pause if playback resumes
+                    positionHandler.postDelayed(this, 500) // Check again in 500ms
                 }
             }
         }
         
-        positionHandler.postDelayed(positionRunnable!!, 1000)
+        // Start immediately without delay, then update every 250ms
+        positionHandler.post(positionRunnable!!)
     }
     
     private fun stopPositionTracking() {

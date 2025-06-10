@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
+import com.example.android.uamp.R
 import com.example.android.uamp.databinding.ItemAutomotiveBrowseBinding
 
 /**
@@ -56,9 +57,9 @@ class AutomotiveBrowseAdapter(
         fun bind(mediaItem: MediaItem) {
             binding.apply {
                 // Set basic track information
-                trackTitle.text = mediaItem.mediaMetadata.title ?: "Unknown Title"
-                artistName.text = mediaItem.mediaMetadata.artist ?: "Unknown Artist"
-                albumName.text = mediaItem.mediaMetadata.albumTitle ?: "Unknown Album"
+                trackTitle.text = mediaItem.mediaMetadata.title ?: root.context.getString(R.string.unknown_title)
+                artistName.text = mediaItem.mediaMetadata.artist ?: root.context.getString(R.string.unknown_artist)
+                albumName.text = mediaItem.mediaMetadata.albumTitle ?: root.context.getString(R.string.unknown_title)
 
                 // For now, hide duration since we can't access it easily
                 trackDuration.text = ""

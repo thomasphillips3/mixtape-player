@@ -99,10 +99,7 @@ class MediaItemFragmentViewModel(
         
         // Subscribe to the MediaBrowser to get media items for this mediaId
         musicServiceConnection.subscribe(mediaId) { mediaItems ->
-            Log.d(TAG, "Received ${mediaItems.size} media items in callback")
-            mediaItems.forEachIndexed { index, item ->
-                Log.d(TAG, "Item $index: mediaId=${item.mediaId}, title=${item.mediaMetadata.title}")
-            }
+                    // Convert media items to UI data
             
             val itemData = mediaItems.map { item ->
                 MediaItemData(
@@ -114,16 +111,41 @@ class MediaItemFragmentViewModel(
                     playbackRes = getResourceForMediaId(item.mediaMetadata.title?.toString() ?: "")
                 )
             }
-            Log.d(TAG, "Posting ${itemData.size} MediaItemData items to LiveData")
+            // Post the data to LiveData
             _mediaItems.postValue(itemData)
         }
     }
 
     /**
-     * Play the media item with the given ID
+     * Play the media item with the given ID or pause if it's currently playing
      */
     fun playMediaId(mediaId: String) {
-        musicServiceConnection.playMedia(mediaId)
+        val currentMediaTitle = musicServiceConnection.nowPlaying.value?.title?.toString()
+        val currentMediaId = musicServiceConnection.nowPlaying.value?.extras?.getString("media_id")
+        val isPlaying = musicServiceConnection.isPlaying.value ?: false
+        val playbackState = musicServiceConnection.playbackState.value ?: Player.STATE_IDLE
+        
+        // Handle play/pause logic for the media item
+        
+        // Check if this is the currently playing track
+        if ((currentMediaId == mediaId || currentMediaTitle == getTrackTitleByMediaId(mediaId)) && 
+            playbackState == Player.STATE_READY) {
+            
+            if (isPlaying) {
+                // Pause the current track
+                musicServiceConnection.pause()
+            } else {
+                // Resume the current track
+                musicServiceConnection.play()
+            }
+        } else {
+            // Play a different track
+            musicServiceConnection.playMedia(mediaId)
+        }
+    }
+    
+    private fun getTrackTitleByMediaId(mediaId: String): String? {
+        return mediaItems.value?.find { it.mediaId == mediaId }?.title
     }
 
     private fun getResourceForMediaId(itemTitle: String): Int {
@@ -131,7 +153,7 @@ class MediaItemFragmentViewModel(
         val playbackState = musicServiceConnection.playbackState.value ?: Player.STATE_IDLE
         val isPlaying = musicServiceConnection.isPlaying.value ?: false
         
-        Log.d(TAG, "getResourceForMediaId: title=$itemTitle, isActive=$isActive, state=$playbackState, isPlaying=$isPlaying")
+        // Determine which icon to show for this media item
 
         return when {
             isActive && playbackState == Player.STATE_READY && isPlaying -> R.drawable.ic_pause
@@ -144,9 +166,10 @@ class MediaItemFragmentViewModel(
         val metadata = musicServiceConnection.nowPlaying.value
         val isPlaying = musicServiceConnection.isPlaying.value ?: false
         
-        Log.d(TAG, "updatePlaybackState: state=$playbackState, isPlaying=$isPlaying, currentTrack=${metadata?.title}")
+        // Update UI state when playback state changes
         
-        if (metadata != null) {
+        // Only update if we have both metadata and existing items to avoid overwriting loaded data with empty list
+        if (metadata != null && !mediaItems.value.isNullOrEmpty()) {
             _mediaItems.postValue(updateState(playbackState, metadata, isPlaying))
         }
     }

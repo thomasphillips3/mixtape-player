@@ -27,10 +27,11 @@ For detailed business strategy, see [BUSINESS_GUIDE.md](BUSINESS_GUIDE.md)
 - **Gapless playback** for seamless listening experience
 
 ### 🎨 **Dynamic Visual Experience**
-- **Video & Image Artwork Support** - Individual track videos (MP4) or images (PNG/JPEG)
-- **Smart fallback system** - Album art when track-specific artwork unavailable
+- **Music Video Support** - Individual track videos (MP4) with ExoPlayer
+- **Image Artwork Support** - PNG/JPEG album art with smart fallback
 - **Dynamic color theming** extracted from album artwork
-- **Immersive full-screen Now Playing** with video backgrounds
+- **Immersive full-screen Now Playing** with looping video backgrounds
+- **Seamless transitions** between video and audio-only tracks
 
 ### 🚗 **Android Auto Integration**
 - **Seamless car connectivity** - Browse and play music in compatible vehicles
@@ -38,7 +39,7 @@ For detailed business strategy, see [BUSINESS_GUIDE.md](BUSINESS_GUIDE.md)
 - **Complete metadata display** - Track info, album art, and controls
 
 ### 📱 **Cross-Platform Support**
-- **Android** - Native Kotlin implementation
+- **Android** - Native Kotlin implementation with ExoPlayer
 - **iOS** - SwiftUI with CarPlay support (documented)
 - **Consistent experience** across all platforms
 
@@ -49,25 +50,25 @@ For detailed business strategy, see [BUSINESS_GUIDE.md](BUSINESS_GUIDE.md)
 
 ---
 
-## 🎬 **Video & Image Artwork**
+## 🎬 **Music Video Implementation**
+
+### Technical Architecture
+- **ExoPlayer Integration** - Professional video playback engine
+- **Asset-based Videos** - Full video files stored in app assets
+- **Background Playback** - Muted, looping video artwork
+- **Automatic Fallback** - Smooth transitions to image artwork when needed
 
 ### Supported Formats
 - **Videos**: MP4 files for immersive track backgrounds
 - **Images**: PNG, JPEG for traditional album art
-- **Naming Convention**: `01_songname.mp4`, `02_artwork.png`, etc.
-- **Fallback**: `album-art.png` or `album-art.jpeg` for tracks without specific artwork
+- **Naming Convention**: `track_03_video.mp4`, `track_07_video.mp4`
+- **Fallback**: Individual track artwork or `album-art.png`
 
 ### Features
 - **Automatic detection** - App detects and uses appropriate artwork type
-- **Video management** - Muted, looping background videos
-- **Color extraction** - Dynamic theming from video thumbnails or images
-- **Seamless switching** - Smooth transitions between video and image tracks
-
-### Setup Process
-1. Place artwork files in `assets/artwork/`
-2. Use track number prefix: `01_`, `02_`, etc.
-3. Run processing script: `python scripts/process-artwork.py`
-4. Rebuild the Android app
+- **Professional quality** - Full-length videos with lossless audio
+- **Color extraction** - Dynamic theming from video thumbnails
+- **Memory management** - Efficient video lifecycle handling
 
 ---
 
@@ -82,15 +83,13 @@ cp your-tracks/*.wav assets/audio/
 python scripts/generate_bundled_catalog.py
 ```
 
-### 2. **Artwork Setup**
+### 2. **Music Video Setup**
 ```bash
-# Place video/image artwork in assets/artwork/
-cp track-videos/*.mp4 assets/artwork/
-cp track-images/*.png assets/artwork/
-cp album-art.png assets/artwork/
+# Place music videos in assets/music-videos/
+cp track-videos/*.mp4 app/src/main/assets/music-videos/
 
-# Process artwork files
-python scripts/process-artwork.py
+# Update catalog.json to mark video tracks
+# Set "hasVideo": true and "videoPath": "generated/music-videos/filename.mp4"
 ```
 
 ### 3. **Client Customization**
@@ -110,7 +109,7 @@ python scripts/process-artwork.py
 ./gradlew assembleDebug
 adb install app/build/outputs/apk/debug/app-debug.apk
 
-# Test in Android Auto (with compatible vehicle or Android Auto simulator)
+# Test video playback on tracks with "hasVideo": true
 ```
 
 ---
@@ -119,12 +118,12 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ```
 mixtape-player/
-├── assets/
+├── app/src/main/assets/
 │   ├── audio/           # High-quality audio files (WAV, FLAC)
-│   └── artwork/         # Video/image artwork files
+│   ├── music-videos/    # MP4 music video files
+│   └── music/           # Catalog configuration
 ├── scripts/
-│   ├── generate_bundled_catalog.py  # Audio catalog generation
-│   └── process-artwork.py           # Artwork processing
+│   └── generate_bundled_catalog.py  # Audio catalog generation
 ├── client-config.json   # White-label customization
 ├── BUSINESS_GUIDE.md   # Business strategy & pricing
 └── README.md           # This file
@@ -135,21 +134,21 @@ mixtape-player/
 ## 🔧 **Technical Architecture**
 
 ### **Android Components**
-- **MusicService** - MediaSessionService for phone playback
+- **MusicService** - MediaSessionService for audio playback
 - **AndroidAutoService** - MediaBrowserServiceCompat for Android Auto
-- **LocalBundledSource** - Manages bundled audio and artwork files
-- **NowPlayingFragment** - Video/image artwork with dynamic theming
+- **LocalBundledSource** - Manages bundled audio and video metadata
+- **NowPlayingFragment** - ExoPlayer video integration with dynamic theming
 
 ### **Audio Pipeline**
-- **ExoPlayer** - Professional audio playback engine
+- **ExoPlayer** - Professional audio and video playback engine
 - **MediaSession** - Android Auto and notification integration
 - **Bundled Resources** - No network dependency, instant loading
 
-### **Artwork System**
-- **Automatic Detection** - Scans for track-specific artwork files
-- **Video Support** - VideoView with muted, looping playback
-- **Color Extraction** - Palette API for dynamic theming
-- **Resource Management** - Efficient memory and lifecycle handling
+### **Video System**
+- **ExoPlayer PlayerView** - Hardware-accelerated video playback
+- **Asset Integration** - Direct access to bundled video files
+- **Background Mode** - Muted, looping video artwork
+- **Lifecycle Management** - Proper cleanup and resource handling
 
 ---
 
@@ -162,19 +161,28 @@ mixtape-player/
 
 ---
 
+## 🎬 **Video Specifications**
+
+- **Supported Formats**: MP4 with H.264 video codec
+- **Resolution**: Up to 720x1280 (portrait) optimized for mobile
+- **Audio**: Muted during video playback (main audio track plays separately)
+- **Performance**: Hardware-accelerated decoding, smooth looping
+
+---
+
 ## 📊 **Business Benefits**
 
 ### **For Mixing Engineers**
 - **New Revenue Stream**: $500-3000 per client app
-- **Professional Branding**: Showcase your mixing work
+- **Professional Branding**: Showcase your mixing work with video
 - **Client Retention**: Ongoing app maintenance contracts
 - **Portfolio Enhancement**: Tech-forward service offering
 
 ### **For Artists**
 - **Direct Fan Connection**: No streaming platform intermediaries
-- **Professional Presentation**: Custom-branded music experience
+- **Professional Presentation**: Custom-branded music experience with video
 - **Complete Control**: Own their music distribution
-- **Enhanced Engagement**: Video artwork, liner notes, behind-the-scenes content
+- **Enhanced Engagement**: Full music videos, liner notes, behind-the-scenes content
 
 ---
 
@@ -184,7 +192,7 @@ mixtape-player/
 - Android Studio Hedgehog+ (2023.1.1+)
 - Kotlin 1.9.10+
 - Gradle 8.2+
-- Python 3.8+ (for build scripts)
+- ExoPlayer 1.2.1+ (included)
 
 ### **Build Process**
 ```bash
@@ -199,9 +207,9 @@ mixtape-player/
 ```
 
 ### **Testing**
-- **Device Testing**: Real Android devices recommended
+- **Device Testing**: Real Android devices recommended for video performance
 - **Android Auto**: Test with compatible vehicle or Android Auto simulator
-- **Audio Quality**: Use high-quality headphones/speakers for testing
+- **Video Quality**: Test on various screen sizes and orientations
 
 ---
 
@@ -209,8 +217,8 @@ mixtape-player/
 
 | Platform | Status | Features |
 |----------|--------|----------|
-| **Android** | ✅ Complete | Video artwork, Android Auto, bundled audio |
-| **iOS** | 📋 Documented | SwiftUI, CarPlay, AVAudioEngine implementation |
+| **Android** | ✅ Complete | ExoPlayer videos, Android Auto, bundled audio |
+| **iOS** | 📋 Documented | SwiftUI, CarPlay, AVPlayer implementation |
 | **Cross-Platform** | ✅ Ready | Shared business logic, consistent UX |
 
 ---
@@ -227,7 +235,7 @@ mixtape-player/
 - Independent musicians
 - Small record labels
 - Producers releasing compilation albums
-- Artists wanting direct fan engagement
+- Artists wanting direct fan engagement with video content
 
 ---
 
@@ -235,14 +243,14 @@ mixtape-player/
 
 ### **Service Pricing**
 - **Basic App**: $500-800 (single album, standard features)
-- **Premium App**: $1000-2000 (multiple albums, video artwork, custom features)
+- **Premium App**: $1000-2000 (multiple albums, music videos, custom features)
 - **Enterprise**: $2000-3000+ (label services, multiple artists, ongoing support)
 
 ### **Ongoing Revenue**
 - **App Store Management**: $50-100/month
 - **Updates & Maintenance**: $200-500/month
 - **Analytics & Insights**: $100-300/month
-- **Additional Features**: Custom pricing
+- **Video Production**: $200-800 per track (if offering video creation services)
 
 ---
 
@@ -276,4 +284,4 @@ For business inquiries and technical support:
 
 ---
 
-**Ready to transform your mixing business? Start building premium music apps for your artist clients today.**
+**Ready to transform your mixing business? Start building premium music apps with professional video integration for your artist clients today.**

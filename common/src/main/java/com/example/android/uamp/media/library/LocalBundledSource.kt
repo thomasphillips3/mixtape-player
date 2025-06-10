@@ -65,23 +65,22 @@ class LocalBundledSource(
                 // Load catalog from assets
                 val musicCatalog = loadCatalogFromAssets()
                 
-                // Scan for artwork files and build artwork map
-                val artworkMap = scanArtworkFiles()
+                // Catalog loaded successfully
                 
-                android.util.Log.d(TAG, "Scanned artwork map: $artworkMap")
-                
-                // Convert to MediaMetadata with bundled file URIs and artwork
+                // Convert to MediaMetadata with mixed URI/resource system
                 musicCatalog.map { track ->
-                    // Get artwork for this track (or fallback)
-                    val artworkInfo = artworkMap[track.trackNumber] ?: artworkMap[0]
-                    
-                    // Determine the artwork URI to display
-                    val artworkUri = artworkInfo?.imageUri ?: run {
-                        // Final fallback to a default drawable
-                        Uri.parse("android.resource://${context.packageName}/drawable/default_art")
+                    // Determine artwork URI based on processed resources
+                    val artworkUri = when {
+                        hasDrawableResource(track.artworkResource) -> {
+                            val uri = Uri.parse("android.resource://${context.packageName}/drawable/${track.artworkResource}")
+                            uri
+                        }
+                        else -> {
+                            // Fallback to default art
+                            val uri = Uri.parse("android.resource://${context.packageName}/drawable/album_art_fallback")
+                            uri
+                        }
                     }
-                    
-                    android.util.Log.d(TAG, "Track ${track.trackNumber} artwork: ${artworkInfo?.type} - ${artworkUri}")
                     
                     MediaMetadata.Builder()
                         .setTitle(track.title)
@@ -94,7 +93,7 @@ class LocalBundledSource(
                         .setArtworkUri(artworkUri)
                         .setExtras(Bundle().apply {
                             putString("media_id", track.id)
-                            putString("media_uri", "android.resource://${context.packageName}/raw/${track.audioResource}")
+                            putString("media_uri", track.audioUri)
                             putLong("duration", track.durationMs)
                             putLong("download_status", DOWNLOAD_STATUS_DOWNLOADED) // Always downloaded since bundled
                             putLong("flag", 1L) // FLAG_PLAYABLE
@@ -103,14 +102,16 @@ class LocalBundledSource(
                             putString("bit_depth", track.bitDepth)
                             putString("mixing_notes", track.mixingNotes)
                             
-                            // Add artwork information for video/image detection
-                            artworkInfo?.let { artwork ->
-                                putString("artwork_type", artwork.type.name)
-                                putString("artwork_uri", artwork.imageUri.toString())
-                                if (artwork.type == ArtworkType.VIDEO) {
-                                    putString("video_uri", artwork.videoUri.toString())
-                                }
+                            // Add track type information
+                            if (track.hasVideo == true) {
+                                putString("track_type", "MUSIC_VIDEO")
+                                putString("video_path", track.videoPath ?: "")
+                                putString("original_audio_uri", track.originalAudioUri ?: "")
+                            } else {
+                                putString("track_type", "AUDIO_ONLY") 
                             }
+                            
+                            putString("artwork_uri", artworkUri.toString())
                         })
                         .build()
                 }
@@ -130,8 +131,6 @@ class LocalBundledSource(
         val artworkMap = mutableMapOf<Int, ArtworkInfo>()
         
         try {
-            android.util.Log.d(TAG, "Scanning assets/artwork directory for numbered artwork files...")
-            
             // Get list of files in assets/artwork directory
             val assetManager = context.assets
             val artworkFiles = try {
@@ -140,8 +139,6 @@ class LocalBundledSource(
                 android.util.Log.w(TAG, "artwork directory not found in assets", e)
                 emptyList<String>()
             }
-            
-            android.util.Log.d(TAG, "Found artwork files: $artworkFiles")
             
             // Process each file
             for (filename in artworkFiles) {
@@ -153,7 +150,6 @@ class LocalBundledSource(
                         val artworkInfo = createArtworkInfoFromAsset(filename, extension)
                         if (artworkInfo != null) {
                             artworkMap[trackNumber] = artworkInfo
-                            android.util.Log.d(TAG, "Added artwork for track $trackNumber: $filename (${artworkInfo.type})")
                         }
                     }
                 } catch (e: Exception) {
@@ -168,13 +164,10 @@ class LocalBundledSource(
                     val artworkInfo = createArtworkInfoFromAsset(fallbackFile, getFileExtension(fallbackFile))
                     if (artworkInfo != null) {
                         artworkMap[0] = artworkInfo
-                        android.util.Log.d(TAG, "Added fallback album art: $fallbackFile")
                         break
                     }
                 }
             }
-            
-            android.util.Log.d(TAG, "Final artwork map: $artworkMap")
             
         } catch (e: Exception) {
             android.util.Log.e(TAG, "Error scanning artwork files", e)
@@ -223,10 +216,8 @@ class LocalBundledSource(
                         val videoUri = Uri.parse("android.resource://${context.packageName}/raw/$videoResourceName")
                         // Use album art as thumbnail
                         val thumbnailUri = Uri.parse("file:///android_asset/artwork/album-art.jpg")
-                        android.util.Log.d(TAG, "Using video resource for track $trackNumber: $videoResourceName")
                         ArtworkInfo(ArtworkType.VIDEO, thumbnailUri, videoUri)
                     } else {
-                        android.util.Log.w(TAG, "Video resource not found: $videoResourceName, falling back to asset")
                         // Fallback to image artwork if video resource doesn't exist
                         val imageUri = Uri.parse("file:///android_asset/artwork/album-art.jpg")
                         ArtworkInfo(ArtworkType.IMAGE, imageUri, null)
@@ -321,12 +312,16 @@ class LocalBundledSource(
         val trackNumber: Int? = null,
         val discNumber: Int? = null,
         val durationMs: Long,
-        val audioResource: String, // Resource name without extension (e.g., "track01")
-        val artworkResource: String, // Resource name for artwork (e.g., "album_art") - DEPRECATED, now auto-detected
+        val audioUri: String, // Asset URI for audio (e.g., "file:///android_asset/audio/01 while it counts.wav")
+        val artworkResource: String, // Resource name for artwork (e.g., "track_01_art")
         val format: String, // "FLAC", "WAV", "MP3"
         val sampleRate: String, // "96kHz", "48kHz", etc.
         val bitDepth: String, // "24-bit", "16-bit"
-        val mixingNotes: String = "" // Professional notes from mixing engineer
+        val mixingNotes: String = "", // Professional notes from mixing engineer
+        val videoResource: String? = null, // Optional video resource name (e.g., "track_03_video")
+        val hasVideo: Boolean = false,
+        val videoPath: String? = null,
+        val originalAudioUri: String? = null
     )
 
     /**

@@ -18,6 +18,7 @@ package com.example.android.uamp
 
 import android.media.AudioManager
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -114,13 +115,10 @@ class MainActivity : AppCompatActivity() {
         val isConnected = viewModel.isConnected.value == true
         val rootMediaId = viewModel.musicServiceConnection.rootMediaId.value
         
-        Log.d(TAG, "checkAndCreateMainFragment: isConnected=$isConnected, rootMediaId=$rootMediaId")
-        
         if (isConnected && !rootMediaId.isNullOrEmpty()) {
             // Only create fragment if it doesn't already exist
             val existingFragment = supportFragmentManager.findFragmentById(R.id.mediaItemFragment)
             if (existingFragment == null) {
-                Log.d(TAG, "Creating MediaItemFragment")
                 val fragment = MediaItemFragment.newInstance(rootMediaId)
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.mediaItemFragment, fragment)
@@ -128,27 +126,55 @@ class MainActivity : AppCompatActivity() {
                 
                 // Set default playback modes without auto-playing
                 setupDefaultPlaybackModes()
-            } else {
-                Log.d(TAG, "Fragment already exists")
             }
-        } else {
-            Log.d(TAG, "Not ready to create fragment yet")
         }
     }
 
     private fun setupDefaultPlaybackModes() {
-        Log.d(TAG, "Setting up default playback modes...")
-        
         // Set default playback modes: repeat all, shuffle off
         viewModel.musicServiceConnection.setRepeatMode(androidx.media3.common.Player.REPEAT_MODE_ALL)
         viewModel.musicServiceConnection.setShuffleMode(false)
         
-        // Preload the catalog without auto-playing
+        // Preload the catalog and auto-load the first track without playing
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            Log.d(TAG, "Preloading catalog...")
             viewModel.musicServiceConnection.subscribe("/") { mediaItems ->
-                Log.d(TAG, "Catalog preloaded with ${mediaItems.size} media items")
-                // Don't auto-play, just log that catalog is ready
+                // Auto-load the first track without playing
+                if (mediaItems.isNotEmpty()) {
+                    val firstTrack = mediaItems.first()
+                    
+                    // Load the track but don't start playback
+                    val service = com.example.android.uamp.media.MusicService.getInstance()
+                    service?.let { musicService ->
+                        musicService.mediaSource.whenReady { success ->
+                            if (success) {
+                                val allTracks = musicService.mediaSource.map { metadata ->
+                                    val id = metadata.extras?.getString("media_id") ?: ""
+                                    val uri = metadata.extras?.getString("media_uri") ?: ""
+                                    
+                                    androidx.media3.common.MediaItem.Builder()
+                                        .setMediaId(id)
+                                        .setUri(uri)
+                                        .setMediaMetadata(metadata)
+                                        .build()
+                                }
+                                
+                                // Set the first track as the current media item but don't play
+                                Handler(android.os.Looper.getMainLooper()).post {
+                                    val connection = viewModel.musicServiceConnection
+                                    if (connection.isConnected.value == true) {
+                                        // Set the playlist but don't start playing
+                                        val mediaController = connection.javaClass.getDeclaredMethod("getMediaBrowser").apply { isAccessible = true }.invoke(connection) as? androidx.media3.session.MediaBrowser
+                                        mediaController?.let { browser ->
+                                            browser.setMediaItems(allTracks, 0, 0)
+                                            browser.prepare()
+                                            // Don't call play() - just prepare the first track
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }, 1000) // 1 second delay to ensure catalog loading
     }

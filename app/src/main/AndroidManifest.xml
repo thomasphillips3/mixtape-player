@@ -61,8 +61,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="example.android.com"
-                    android:pathPattern="/uamp"
+                    android:host="bom.best"
+                    android:pathPattern="/timeoff3"
                     android:scheme="http" />
             </intent-filter>
 
@@ -74,8 +74,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="example.android.com"
-                    android:pathPattern="/uamp"
+                    android:host="bom.best"
+                    android:pathPattern="/timeoff3"
                     android:scheme="https" />
             </intent-filter>
 

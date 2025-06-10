@@ -24,11 +24,14 @@
     android:background="@android:color/transparent">
 
     <!-- Video artwork background (for MP4 videos) -->
-    <VideoView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/backgroundVideo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        app:use_controller="false"
+        app:show_buffering="never"
+        app:resize_mode="zoom"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

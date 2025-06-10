@@ -124,7 +124,7 @@ class MusicServiceConnection(
         }
         
         override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
-            Log.d(TAG, "onPositionDiscontinuity: oldPos=${oldPosition.positionMs}, newPos=${newPosition.positionMs}, reason=$reason")
+            // Position discontinuity detected
             // Update position immediately when seeking occurs
             currentPosition.postValue(newPosition.positionMs)
         }
@@ -143,7 +143,7 @@ class MusicServiceConnection(
             val browser = getMediaBrowser()
             if (browser != null && browser.currentMediaItem != null) {
                 val currentMetadata = browser.currentMediaItem?.mediaMetadata
-                Log.d(TAG, "updateCurrentMediaMetadata: ${currentMetadata?.title}")
+                // Update current media metadata
                 currentMetadata?.let { 
                     nowPlaying.postValue(it)
                 }
@@ -207,6 +207,9 @@ class MusicServiceConnection(
         if (isTrackingPosition) return
         isTrackingPosition = true
         
+        // Get initial position immediately
+        updatePositionAndDuration()
+        
         positionUpdateRunnable = object : Runnable {
             override fun run() {
                 val browser = getMediaBrowser()
@@ -215,13 +218,14 @@ class MusicServiceConnection(
                     val currentPos = browser.currentPosition
                     currentPosition.postValue(currentPos)
                     
-                    // Continue tracking
-                    positionHandler.postDelayed(this, 1000) // Update every second
+                    // Continue tracking at 250ms intervals for smooth UI updates
+                    positionHandler.postDelayed(this, 250)
                 }
             }
         }
         
-        positionHandler.postDelayed(positionUpdateRunnable!!, 1000)
+        // Start immediately without delay, then update every 250ms
+        positionHandler.post(positionUpdateRunnable!!)
     }
     
     private fun stopPositionTracking() {
@@ -379,14 +383,12 @@ class MusicServiceConnection(
      * Subscribe to a parent media ID to get its children
      */
     fun subscribe(parentId: String, callback: (List<MediaItem>) -> Unit) {
-        Log.d(TAG, "Subscribe called for parentId: $parentId")
         subscriptions[parentId] = callback
         
         if (isConnected.value == true && parentId == "/") {
             // Get the catalog directly from the service
             val service = MusicService.getInstance()
             if (service != null) {
-                Log.d(TAG, "Service found, checking if catalog is ready")
                 
                 // Try to get the catalog immediately, if not ready, poll for it
                 checkCatalogAndCallback(service, callback, 0)
@@ -402,7 +404,6 @@ class MusicServiceConnection(
     private fun checkCatalogAndCallback(service: MusicService, callback: (List<MediaItem>) -> Unit, attempt: Int) {
         val isReady = service.mediaSource.whenReady { success ->
             if (success) {
-                Log.d(TAG, "Catalog is ready via whenReady callback (attempt $attempt)")
                 val mediaItems = service.mediaSource.map { metadata ->
                     val mediaId = metadata.extras?.getString("media_id") ?: ""
                     val mediaUri = metadata.extras?.getString("media_uri") ?: ""
@@ -413,7 +414,6 @@ class MusicServiceConnection(
                         .setMediaMetadata(metadata)
                         .build()
                 }
-                Log.d(TAG, "Returning ${mediaItems.size} media items via whenReady")
                 callback(mediaItems)
             } else {
                 Log.w(TAG, "Catalog failed to load")
@@ -421,15 +421,10 @@ class MusicServiceConnection(
             }
         }
         
-        if (isReady) {
-            // Catalog was already ready, callback was called synchronously
-            Log.d(TAG, "Catalog was already ready (attempt $attempt)")
-        } else {
+        if (!isReady) {
             // Catalog is still loading - set up a retry mechanism
-            Log.d(TAG, "Catalog is still loading, will retry (attempt $attempt)")
             if (attempt < 10) { // Max 10 attempts (10 seconds)
                 Handler(Looper.getMainLooper()).postDelayed({
-                    Log.d(TAG, "Retrying catalog check (attempt ${attempt + 1})")
                     checkCatalogAndCallback(service, callback, attempt + 1)
                 }, 1000) // Check again in 1 second
             } else {
