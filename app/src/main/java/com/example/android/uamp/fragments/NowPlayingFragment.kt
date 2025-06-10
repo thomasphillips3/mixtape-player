@@ -653,21 +653,27 @@ class NowPlayingFragment : Fragment() {
     }
 
     private fun getArtworkTypeFromMetadata(): String? {
-        // Get artwork type from current playing metadata - simplified approach
         return try {
-            // For now, check if we have video files based on track number
-            val metadata = viewModel.mediaMetadata.value
-            metadata?.id?.let { mediaId ->
-                // Extract track number from media ID if possible
-                val trackNumber = extractTrackNumberFromId(mediaId)
-                if (trackNumber > 0) {
-                    // Check if video resource exists for this track
-                    val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
-                    if (hasVideoResource(videoResourceName)) "VIDEO" else "IMAGE"
-                } else {
-                    "IMAGE"
-                }
-            } ?: "IMAGE"
+            // Get raw MediaMetadata from musicServiceConnection to access extras
+            val rawMetadata = musicServiceConnection.nowPlaying.value
+            val artworkType = rawMetadata?.extras?.getString("artwork_type")
+            
+            if (!artworkType.isNullOrEmpty()) {
+                android.util.Log.d(TAG, "Got artwork type from metadata extras: $artworkType")
+                artworkType.uppercase()
+            } else {
+                // Fallback to legacy detection method
+                val metadata = viewModel.mediaMetadata.value
+                metadata?.id?.let { mediaId ->
+                    val trackNumber = extractTrackNumberFromId(mediaId)
+                    if (trackNumber > 0) {
+                        val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
+                        if (hasVideoResource(videoResourceName)) "VIDEO" else "IMAGE"
+                    } else {
+                        "IMAGE"
+                    }
+                } ?: "IMAGE"
+            }
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Failed to get artwork type", e)
             "IMAGE" // Default fallback
@@ -676,18 +682,31 @@ class NowPlayingFragment : Fragment() {
 
     private fun getVideoUriFromMetadata(): Uri? {
         return try {
-            val metadata = viewModel.mediaMetadata.value
-            val mediaId = metadata?.id
-            if (mediaId != null) {
-                val trackNumber = extractTrackNumberFromId(mediaId)
-                if (trackNumber > 0) {
-                    val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
-                    Uri.parse("android.resource://${requireContext().packageName}/raw/$videoResourceName")
+            // Get raw MediaMetadata from musicServiceConnection to access extras
+            val rawMetadata = musicServiceConnection.nowPlaying.value
+            val videoUriString = rawMetadata?.extras?.getString("video_uri")
+            
+            if (!videoUriString.isNullOrEmpty()) {
+                val videoUri = Uri.parse(videoUriString)
+                android.util.Log.d(TAG, "Got video URI from metadata extras: $videoUri")
+                videoUri
+            } else {
+                // Fallback to legacy construction method
+                val metadata = viewModel.mediaMetadata.value
+                val mediaId = metadata?.id
+                if (mediaId != null) {
+                    val trackNumber = extractTrackNumberFromId(mediaId)
+                    if (trackNumber > 0) {
+                        val videoResourceName = "track_${trackNumber.toString().padStart(2, '0')}_video"
+                        val fallbackUri = Uri.parse("android.resource://${requireContext().packageName}/raw/$videoResourceName")
+                        android.util.Log.d(TAG, "Generated fallback video URI: $fallbackUri")
+                        fallbackUri
+                    } else {
+                        null
+                    }
                 } else {
                     null
                 }
-            } else {
-                null
             }
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Failed to get video URI", e)

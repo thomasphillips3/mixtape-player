@@ -72,20 +72,30 @@ class LocalBundledSource(
                 
                 // Convert to MediaMetadata with bundled file URIs and artwork
                 musicCatalog.map { track ->
-                    val trackArtwork = artworkMap[track.trackNumber] ?: artworkMap[0] // 0 = fallback album art
-                    
-                    // Determine the best artwork URI - prioritize scanned artwork over catalog reference
-                    val artworkUri = when {
-                        trackArtwork != null -> {
-                            android.util.Log.d(TAG, "Using scanned artwork for track ${track.trackNumber}: ${trackArtwork.imageUri}")
-                            trackArtwork.imageUri
+                    // Check if track has specific artworkType and artworkResource in catalog
+                    val artworkInfo = when {
+                        track.artworkType == "video" && track.artworkResource.isNotEmpty() -> {
+                            // Try to create video artwork info from catalog
+                            createVideoArtworkFromCatalog(track)
+                        }
+                        track.artworkResource.isNotEmpty() -> {
+                            // Try to create image artwork info from catalog
+                            createImageArtworkFromCatalog(track)
                         }
                         else -> {
-                            val fallbackUri = Uri.parse("android.resource://${context.packageName}/drawable/${track.artworkResource}")
-                            android.util.Log.d(TAG, "Using catalog fallback artwork for track ${track.trackNumber}: $fallbackUri")
-                            fallbackUri
+                            // Fallback to scanned artwork
+                            artworkMap[track.trackNumber] ?: artworkMap[0]
                         }
+                    } ?: artworkMap[track.trackNumber] ?: artworkMap[0] // Final fallback
+                    
+                    // Determine the best artwork URI
+                    val artworkUri = artworkInfo?.imageUri ?: run {
+                        val fallbackUri = Uri.parse("android.resource://${context.packageName}/drawable/${track.artworkResource}")
+                        android.util.Log.d(TAG, "Using catalog fallback artwork for track ${track.trackNumber}: $fallbackUri")
+                        fallbackUri
                     }
+                    
+                    android.util.Log.d(TAG, "Track ${track.trackNumber} artwork: ${artworkInfo?.type} - ${artworkUri}")
                     
                     MediaMetadata.Builder()
                         .setTitle(track.title)
@@ -108,7 +118,7 @@ class LocalBundledSource(
                             putString("mixing_notes", track.mixingNotes)
                             
                             // Add artwork information
-                            trackArtwork?.let { artwork ->
+                            artworkInfo?.let { artwork ->
                                 putString("artwork_type", artwork.type.name)
                                 putString("artwork_uri", artwork.imageUri.toString())
                                 if (artwork.type == ArtworkType.VIDEO) {
@@ -122,6 +132,47 @@ class LocalBundledSource(
                 android.util.Log.e(TAG, "Failed to load bundled catalog", e)
                 null
             }
+        }
+    }
+
+    /**
+     * Create video artwork info from catalog data
+     */
+    private fun createVideoArtworkFromCatalog(track: BundledTrack): ArtworkInfo? {
+        return try {
+            // Check if video resource exists in raw folder
+            if (hasRawResource(track.artworkResource)) {
+                val videoUri = Uri.parse("android.resource://${context.packageName}/raw/${track.artworkResource}")
+                val thumbnailUri = Uri.parse("android.resource://${context.packageName}/drawable/album_art_fallback")
+                android.util.Log.d(TAG, "Created video artwork from catalog for track ${track.trackNumber}: ${track.artworkResource}")
+                ArtworkInfo(ArtworkType.VIDEO, thumbnailUri, videoUri)
+            } else {
+                android.util.Log.w(TAG, "Video resource not found: ${track.artworkResource}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error creating video artwork from catalog", e)
+            null
+        }
+    }
+
+    /**
+     * Create image artwork info from catalog data
+     */
+    private fun createImageArtworkFromCatalog(track: BundledTrack): ArtworkInfo? {
+        return try {
+            // Check if image resource exists in drawable folder
+            if (hasDrawableResource(track.artworkResource)) {
+                val imageUri = Uri.parse("android.resource://${context.packageName}/drawable/${track.artworkResource}")
+                android.util.Log.d(TAG, "Created image artwork from catalog for track ${track.trackNumber}: ${track.artworkResource}")
+                ArtworkInfo(ArtworkType.IMAGE, imageUri, null)
+            } else {
+                android.util.Log.w(TAG, "Image resource not found: ${track.artworkResource}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error creating image artwork from catalog", e)
+            null
         }
     }
 
@@ -149,7 +200,6 @@ class LocalBundledSource(
                 
                 // Check for video artwork first (higher priority)
                 val videoResourceName = "track_${trackPadded}_video"
-                val thumbResourceName = "track_${trackPadded}_thumb"
                 
                 if (hasRawResource(videoResourceName)) {
                     // For video artwork, always use fallback album art as thumbnail for better visual consistency
@@ -197,8 +247,6 @@ class LocalBundledSource(
             false
         }
     }
-
-
 
     /**
      * Load the music catalog from the assets folder.
@@ -254,7 +302,8 @@ class LocalBundledSource(
         val format: String, // "FLAC", "WAV", "MP3"
         val sampleRate: String, // "96kHz", "48kHz", etc.
         val bitDepth: String, // "24-bit", "16-bit"
-        val mixingNotes: String = "" // Professional notes from mixing engineer
+        val mixingNotes: String = "", // Professional notes from mixing engineer
+        val artworkType: String = "" // "video" or "image"
     )
 
     /**
