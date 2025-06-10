@@ -566,13 +566,15 @@ class NowPlayingFragment : Fragment() {
 
     private fun setupVideoView(videoView: VideoView, videoUri: Uri) {
         try {
+            android.util.Log.d(TAG, "Setting up video view with URI: $videoUri")
+            
             currentVideoView = videoView
             
+            // Set video URI (works for both resource and asset URIs)
             videoView.setVideoURI(videoUri)
             
-            // Set up video completion listener for looping
+            // Set up completion listener to restart video (looping)
             videoView.setOnCompletionListener { mediaPlayer ->
-                // Loop the video
                 mediaPlayer.isLooping = true
                 videoView.start()
             }
@@ -595,7 +597,7 @@ class NowPlayingFragment : Fragment() {
             
             // Set up error listener
             videoView.setOnErrorListener { _, what, extra ->
-                android.util.Log.e(TAG, "Video playback error: what=$what, extra=$extra")
+                android.util.Log.e(TAG, "Video playback error: what=$what, extra=$extra, uri=$videoUri")
                 // Fallback to image artwork
                 fallbackToImageArtwork()
                 true // Error handled
