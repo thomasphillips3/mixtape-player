@@ -7,8 +7,11 @@
 
 import SwiftUI
 import AVFoundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
+#if canImport(UIKit)
 struct VideoPlayerView: UIViewRepresentable {
     let videoURL: URL
     @Binding var isPlaying: Bool
@@ -141,4 +144,27 @@ struct VideoBackgroundView: View {
         let fileExtension = "mp4"
         return Bundle.main.url(forResource: videoFileName, withExtension: fileExtension, subdirectory: "Resources/music-videos")
     }
-} 
+}
+
+#else
+// Fallback for platforms without UIKit
+struct VideoPlayerView: View {
+    let videoURL: URL
+    @Binding var isPlaying: Bool
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color.black)
+    }
+}
+
+struct VideoBackgroundView: View {
+    let track: Track
+    @Binding var isPlaying: Bool
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.3))
+    }
+}
+#endif 

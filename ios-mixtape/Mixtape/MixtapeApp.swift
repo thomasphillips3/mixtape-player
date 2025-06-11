@@ -32,6 +32,7 @@ struct MixtapeApp: App {
     }
     
     private func setupAudioSession() {
+        #if os(iOS)
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.playback, mode: .default, options: [.allowAirPlay, .allowBluetooth, .allowBluetoothA2DP])
@@ -39,6 +40,7 @@ struct MixtapeApp: App {
         } catch {
             print("Failed to set up audio session: \(error)")
         }
+        #endif
     }
     
     private func setupRemoteCommands() {

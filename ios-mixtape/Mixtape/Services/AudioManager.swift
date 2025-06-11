@@ -281,7 +281,8 @@ class AudioManager: NSObject, ObservableObject {
         nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         
-        // Set shuffle and repeat mode
+        // Set shuffle and repeat mode (iOS only)
+        #if os(iOS)
         nowPlayingInfo[MPNowPlayingInfoPropertyShuffleMode] = isShuffleEnabled ? MPNowPlayingInfoShuffleMode.items.rawValue : MPNowPlayingInfoShuffleMode.off.rawValue
         
         switch repeatMode {
@@ -292,20 +293,29 @@ class AudioManager: NSObject, ObservableObject {
         case .all:
             nowPlayingInfo[MPNowPlayingInfoPropertyRepeatMode] = MPNowPlayingInfoRepeatMode.all.rawValue
         }
+        #endif
         
         // Load album artwork from bundle
+        #if canImport(UIKit)
         if let artworkImage = getBundleArtwork(for: track) {
             let artwork = MPMediaItemArtwork(boundsSize: artworkImage.size) { _ in artworkImage }
             nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
         }
+        #endif
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
     
+    #if canImport(UIKit)
     private func getBundleArtwork(for track: Track) -> UIImage? {
         let artworkName = track.albumArtURL
         return UIImage(named: artworkName) ?? UIImage(named: "album_art_fallback")
     }
+    #else
+    private func getBundleArtwork(for track: Track) -> Any? {
+        return nil
+    }
+    #endif
 }
 
 // MARK: - Extensions

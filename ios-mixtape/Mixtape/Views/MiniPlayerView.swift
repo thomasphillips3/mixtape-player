@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct MiniPlayerView: View {
     @Binding var showingNowPlaying: Bool
@@ -61,6 +64,7 @@ struct MiniPlayerView: View {
         HStack(spacing: 12) {
             // Album art
             Group {
+                #if canImport(UIKit)
                 if let artworkImage = UIImage(named: track.albumArtURL) ?? UIImage(named: "album_art_fallback") {
                     Image(uiImage: artworkImage)
                         .resizable()
@@ -73,6 +77,14 @@ struct MiniPlayerView: View {
                                 .foregroundColor(.gray)
                         )
                 }
+                #else
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .overlay(
+                        Image(systemName: "music.note")
+                            .foregroundColor(.gray)
+                    )
+                #endif
             }
             .frame(width: 50, height: 50)
             .cornerRadius(8)

@@ -10,6 +10,19 @@ import SwiftUI
 import UIKit
 #endif
 
+// Fallback VideoBackgroundView for platforms where it's not available
+#if !canImport(UIKit)
+struct VideoBackgroundView: View {
+    let track: Track
+    @Binding var isPlaying: Bool
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.3))
+    }
+}
+#endif
+
 struct NowPlayingView: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var audioManager: AudioManager
@@ -51,12 +64,12 @@ struct NowPlayingView: View {
                     isDragging = false
                     
                     // Handle swipe gestures
-                    if value.translation.y > 100 {
+                    if value.translation.height > 100 {
                         // Swipe down to dismiss
                         isPresented = false
-                    } else if abs(value.translation.x) > 100 {
+                    } else if abs(value.translation.width) > 100 {
                         // Horizontal swipes for track navigation
-                        if value.translation.x > 0 {
+                        if value.translation.width > 0 {
                             audioManager.skipPrevious()
                         } else {
                             audioManager.skipNext()
@@ -250,20 +263,25 @@ struct NowPlayingView: View {
     
     private func extractDominantColor(from image: Image) {
         // Convert SwiftUI Image to UIImage for color extraction
+        #if canImport(UIKit)
         let renderer = ImageRenderer(content: image)
         if let uiImage = renderer.uiImage {
             extractDominantColor(from: uiImage)
         }
+        #endif
     }
     
     private func extractDominantColorFromTrack(_ track: Track) {
         // Extract color from bundled artwork
+        #if canImport(UIKit)
         let artworkName = track.albumArtURL
         if let artworkImage = UIImage(named: artworkName) ?? UIImage(named: "album_art_fallback") {
             extractDominantColor(from: artworkImage)
         }
+        #endif
     }
     
+    #if canImport(UIKit)
     private func extractDominantColor(from uiImage: UIImage) {
         Task {
             let dominantUIColor = await getDominantColor(from: uiImage)
@@ -273,6 +291,7 @@ struct NowPlayingView: View {
             }
         }
     }
+    #endif
     
     private func updateBackgroundGradient() {
         backgroundGradient = LinearGradient(
@@ -286,6 +305,7 @@ struct NowPlayingView: View {
         )
     }
     
+    #if canImport(UIKit)
     private func getDominantColor(from image: UIImage) async -> UIColor {
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .background).async {
@@ -329,6 +349,7 @@ struct NowPlayingView: View {
             }
         }
     }
+    #endif
 }
 
 // MARK: - Preview

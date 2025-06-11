@@ -104,6 +104,10 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         // CarPlay automatically handles Now Playing when we use MPNowPlayingInfoCenter
         // which is already set up in AudioManager
     }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 }
 
 // MARK: - CPListTemplateDelegate
@@ -224,10 +228,6 @@ extension CarPlaySceneDelegate {
     @objc private func catalogDidUpdate() {
         refreshCarPlayContent()
     }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
 }
 
 #else
@@ -236,5 +236,9 @@ import Foundation
 
 class CarPlaySceneDelegate: NSObject {
     // Empty implementation for unsupported platforms
+    
+    deinit {
+        // Empty deinit for compatibility
+    }
 }
 #endif 
