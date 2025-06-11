@@ -40,8 +40,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize the Cast context for media casting functionality
-        castContext = CastContext.getSharedInstance(this)
+        // Initialize the Cast context for media casting functionality (optional)
+        try {
+            castContext = CastContext.getSharedInstance(this)
+        } catch (e: Exception) {
+            // Cast framework not available - app will work without casting functionality
+            Log.w(TAG, "Cast framework not available: ${e.message}")
+            castContext = null
+        }
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
