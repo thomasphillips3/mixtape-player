@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct NowPlayingView: View {
     @Binding var isPresented: Bool
@@ -66,27 +69,17 @@ struct NowPlayingView: View {
     private var backgroundView: some View {
         Group {
             if let track = audioManager.currentTrack {
-                AsyncImage(url: URL(string: track.albumArtURL)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        GeometryReader { geometry in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: geometry.size.width, height: geometry.size.height)
-                                .clipped()
-                                .overlay(
-                                    backgroundGradient
-                                )
-                                .onAppear {
-                                    extractDominantColor(from: image)
-                                }
+                GeometryReader { geometry in
+                    VideoBackgroundView(track: track, isPlaying: $audioManager.isPlaying)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .overlay(backgroundGradient)
+                        .onAppear {
+                            extractDominantColorFromTrack(track)
                         }
-                    case .failure(_), .empty:
-                        defaultBackground
-                    @unknown default:
-                        defaultBackground
-                    }
+                        .onChange(of: track.id) { _ in
+                            extractDominantColorFromTrack(track)
+                        }
                 }
             } else {
                 defaultBackground
@@ -260,6 +253,14 @@ struct NowPlayingView: View {
         let renderer = ImageRenderer(content: image)
         if let uiImage = renderer.uiImage {
             extractDominantColor(from: uiImage)
+        }
+    }
+    
+    private func extractDominantColorFromTrack(_ track: Track) {
+        // Extract color from bundled artwork
+        let artworkName = track.albumArtURL
+        if let artworkImage = UIImage(named: artworkName) ?? UIImage(named: "album_art_fallback") {
+            extractDominantColor(from: artworkImage)
         }
     }
     

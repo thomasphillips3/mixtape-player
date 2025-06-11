@@ -60,17 +60,19 @@ struct MiniPlayerView: View {
     private func miniPlayerContent(track: Track) -> some View {
         HStack(spacing: 12) {
             // Album art
-            AsyncImage(url: URL(string: track.albumArtURL)) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .overlay(
-                        Image(systemName: "music.note")
-                            .foregroundColor(.gray)
-                    )
+            Group {
+                if let artworkImage = UIImage(named: track.albumArtURL) ?? UIImage(named: "album_art_fallback") {
+                    Image(uiImage: artworkImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .overlay(
+                            Image(systemName: "music.note")
+                                .foregroundColor(.gray)
+                        )
+                }
             }
             .frame(width: 50, height: 50)
             .cornerRadius(8)

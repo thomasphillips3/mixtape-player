@@ -9,6 +9,9 @@ import Foundation
 import AVFoundation
 import MediaPlayer
 import Combine
+#if canImport(UIKit)
+import UIKit
+#endif
 
 enum RepeatMode: CaseIterable {
     case none, one, all
@@ -157,8 +160,9 @@ class AudioManager: NSObject, ObservableObject {
         let track = playlist[currentIndex]
         currentTrack = track
         
-        guard let url = URL(string: track.audioURL) else {
-            print("Invalid URL for track: \(track.title)")
+        // Get URL from bundle resources
+        guard let url = getBundleAudioURL(for: track) else {
+            print("Audio file not found for track: \(track.title)")
             return
         }
         
@@ -176,6 +180,21 @@ class AudioManager: NSObject, ObservableObject {
         }
         
         updateNowPlayingInfo()
+    }
+    
+    private func getBundleAudioURL(for track: Track) -> URL? {
+        // Look for audio file in bundle
+        let fileName = track.audioURL
+        let fileExtension = "wav"
+        
+        return Bundle.main.url(forResource: fileName, withExtension: fileExtension, subdirectory: "Resources/audio")
+    }
+    
+    private func getBundleVideoURL(for track: Track) -> URL? {
+        guard let videoFileName = track.videoURL else { return nil }
+        
+        let fileExtension = "mp4"
+        return Bundle.main.url(forResource: videoFileName, withExtension: fileExtension, subdirectory: "Resources/music-videos")
     }
     
     private func updatePlaylist() {
@@ -274,26 +293,18 @@ class AudioManager: NSObject, ObservableObject {
             nowPlayingInfo[MPNowPlayingInfoPropertyRepeatMode] = MPNowPlayingInfoRepeatMode.all.rawValue
         }
         
-        // Load album artwork asynchronously
-        if let artworkURL = URL(string: track.albumArtURL) {
-            Task {
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: artworkURL)
-                    if let image = UIImage(data: data) {
-                        let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-                        nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
-                        
-                        DispatchQueue.main.async {
-                            MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
-                        }
-                    }
-                } catch {
-                    print("Failed to load album artwork: \(error)")
-                }
-            }
+        // Load album artwork from bundle
+        if let artworkImage = getBundleArtwork(for: track) {
+            let artwork = MPMediaItemArtwork(boundsSize: artworkImage.size) { _ in artworkImage }
+            nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
         }
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    }
+    
+    private func getBundleArtwork(for track: Track) -> UIImage? {
+        let artworkName = track.albumArtURL
+        return UIImage(named: artworkName) ?? UIImage(named: "album_art_fallback")
     }
 }
 

@@ -5,10 +5,12 @@
 //  CarPlay integration for in-car music experience
 //
 
+#if canImport(CarPlay) && !targetEnvironment(macCatalyst) && os(iOS)
 import CarPlay
 import UIKit
 import MediaPlayer
 
+@available(iOS 12.0, *)
 class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     
     var interfaceController: CPInterfaceController?
@@ -226,4 +228,13 @@ extension CarPlaySceneDelegate {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-} 
+}
+
+#else
+// CarPlay not available on this platform
+import Foundation
+
+class CarPlaySceneDelegate: NSObject {
+    // Empty implementation for unsupported platforms
+}
+#endif 
